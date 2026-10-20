@@ -261,13 +261,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CONFIG, 
 
 if (typeof document !== 'undefined') {
   let state = createState();
+  let teacherSession = null;
   const app = document.getElementById('app');
   const dialog = document.getElementById('restart-dialog');
   const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const dateAt = round => `${CONFIG.startDay + Math.floor(Math.min(round, 20) / CONFIG.blocksPerDay)} oktober ${CONFIG.year}`;
   const actionButton = (action, label, kind = 'secondary', sub = 'Kost 1 werkblok') => `<button class="button ${kind}" data-action="${action.type}" data-index="${action.index}" ${Number.isInteger(action.task) ? `data-task="${action.task}"` : ''}>${label}<span class="action-cost">${sub}</span></button>`;
   function renderIntro() {
-    app.innerHTML = `<section class="welcome-screen animate" aria-labelledby="welcome-title"><div class="welcome-mark" aria-hidden="true">✦</div><p class="eyebrow">JOUW PERSOONLIJKE STUDIEGIDS</p><h1 id="welcome-title">Hoi, ik ben<br><span>StudyGuideAI.</span></h1><p>Een nieuwe studieweek, drie opdrachten.<br>Ik help je overzicht houden en je volgende stap kiezen.</p><button class="button primary" data-start>Begin mijn studieweek <span aria-hidden="true">↗</span></button><span class="welcome-caption">Jij kiest hoe je verdergaat.</span></section>`;
+    app.innerHTML = '<div class="welcome-layout animate"><section class="welcome-screen" aria-labelledby="welcome-title"><p class="eyebrow">JOUW PERSOONLIJKE STUDIEGIDS</p><h1 id="welcome-title">Hoi, ik ben<br><span>StudyGuideAI.</span></h1><p>Ik help je overzicht houden<br>en je volgende stap kiezen.</p><button class="button primary" data-start>Begin mijn studieweek</button></section><aside class="simulation-intro" aria-labelledby="simulation-title"><h2 id="simulation-title">Welkom bij<br>de simulatie.</h2><p>Deze simulatie maakt de invloed van StudyGuideAI op jouw keuzes zichtbaar.</p><ol><li><span class="simulation-step" aria-hidden="true">01</span><p>Je begint met <strong>drie fictieve opdrachten</strong>, elk met een eigen deadline.</p></li><li><span class="simulation-step" aria-hidden="true">02</span><p>Je kiest waaraan je werkt en hoe je met het AI-advies omgaat. Aan het einde ontvang je jouw <strong>beoordelingen</strong>.</p></li><li><span class="simulation-step" aria-hidden="true">03</span><p>Daarna kun je naar je <strong>docent</strong> stappen om je resultaten en keuzes te bespreken.</p></li></ol><p class="simulation-goodluck">Succes. De keuzes zijn aan jou.</p></aside></div>';
   }
   function renderGame() {
     const oldChat = app.querySelector('.chat-messages');
@@ -323,6 +324,7 @@ if (typeof document !== 'undefined') {
     chat.scrollTop = oldCount === messageCount ? oldTop : chat.scrollHeight;
   }
   function renderResults() {
+    document.body.classList.remove('teacher-chat','teacher-outcome');
     app.innerHTML = `<section class="final-screen animate" aria-labelledby="results-title"><div class="finish-icon" aria-hidden="true">✓</div><p class="eyebrow">JE STUDIEWEEK IS AFGEROND</p><h1 id="results-title">Je beoordelingen<br>zijn binnen.</h1><p class="final-intro">Bekijk je resultaten. Daarna bespreek je met je docent hoe je week is verlopen.</p><div class="final-results">${ASSIGNMENTS.map((a, i) => {
       const result = state.work[i].submitted;
       const tone = result.label === 'Boven niveau' ? 'above' : result.label === 'Op niveau' ? 'good' : 'developing';
@@ -330,19 +332,79 @@ if (typeof document !== 'undefined') {
     }).join('')}</div><button class="button primary" data-docent>Verder naar het docentgesprek <span aria-hidden="true">↗</span></button><button class="text-button" data-restart>Opnieuw beginnen</button></section>`;
   }
   function renderDocent() {
-    app.innerHTML = `<section class="final-screen docent-next animate" aria-labelledby="docent-title"><div class="welcome-mark" aria-hidden="true">✦</div><p class="eyebrow">DE VOLGENDE STAP</p><h1 id="docent-title">In gesprek<br>met je docent.</h1><p class="final-intro">Je resultaten staan klaar. Het docentgesprek wordt in een volgende versie toegevoegd.</p><button class="button secondary" data-results>Terug naar mijn beoordelingen</button></section>`;
+    if (!state.finished) return;
+    const teacher = globalThis.TeacherConversation;
+    if (!teacher) {
+      app.innerHTML = '<section class="final-screen"><h1>Het gesprek kon niet laden.</h1><p>Ververs de pagina of controleer of teacher.js naast script.js staat.</p><button class="button secondary" data-results>Terug naar beoordelingen</button></section>';
+      return;
+    }
+    if (!teacherSession) teacherSession = teacher.create(state);
+    document.body.classList.add('teacher-chat');
+    document.body.classList.toggle('teacher-outcome',teacherSession.finished);
+    const metricLabels = [['credibility','Geloofwaardigheid'],['understanding','Begrip'],['doubt','Twijfel aan je verhaal'],['openness','Bereidheid tot meedenken']];
+    const deltaFor = key => {
+      if (!teacherSession.lastChanges) return '';
+      const delta = teacherSession.lastChanges[key];
+      const favorable = key === 'doubt' ? delta < 0 : delta > 0;
+      return '<span class="teacher-delta ' + (delta === 0 ? 'neutral' : favorable ? 'favorable' : 'unfavorable') + '" aria-label="Verandering na je laatste antwoord: ' + (delta > 0 ? 'plus ' : '') + delta + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
+    };
+    const metrics = '<aside class="teacher-metrics" aria-label="Indruk en geduld van je docent"><p class="eyebrow">JE DOCENT</p><h2>Het gesprek</h2>' +
+      '<div class="teacher-patience"><div class="teacher-metric-label"><span>Geduld</span></div>' +
+      '<div class="stat-track" role="meter" aria-label="Geduld van de docent" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(teacherSession.patience / teacherSession.maxPatience * 100) + '" aria-valuetext="' + (teacherSession.patience / teacherSession.maxPatience > 0.5 ? 'De docent heeft nog geduld.' : 'Het geduld van de docent raakt op.') + '"><span style="width:' + teacherSession.patience / teacherSession.maxPatience * 100 + '%"></span></div></div>' +
+      '<div class="teacher-live-metrics">' + metricLabels.map(([key,label]) => '<div class="teacher-live-metric"><div class="teacher-metric-label"><span>' + label + '</span><strong>' + teacherSession.stats[key] + '</strong>' + deltaFor(key) + '</div>' +
+      '<div class="stat-track ' + (key === 'doubt' ? 'teacher-doubt' : '') + '" role="meter" aria-label="' + label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + teacherSession.stats[key] + '"><span style="width:' + teacherSession.stats[key] + '%"></span></div></div>').join('') + '</div>' +
+      '<p class="teacher-metric-note">' + (teacherSession.lastChanges ? 'Veranderingen na je laatste antwoord.' : 'Je antwoorden beïnvloeden de indruk van je docent.') + '</p><p class="teacher-metric-note">Groen = gunstig · oranje = ongunstig. Bij twijfel is een daling gunstig.</p></aside>';
+    const currentThoughts = teacher.thoughts(teacherSession);
+    const thoughtPanel = '<aside class="teacher-thoughts" aria-label="Gedachten van de docent"><div class="teacher-thought-heading"><span class="thought-symbol" aria-hidden="true">◌</span><div><p class="eyebrow">ACHTER DE REACTIE</p><h2>De docent denkt</h2></div></div>' +
+      '<div class="teacher-thought-list" aria-live="polite" aria-atomic="true">' + currentThoughts.map((thought,index) =>
+        '<article class="teacher-thought-card ' + (index === 0 ? 'dominant' : '') + '"><span class="thought-caption">' + (teacherSession.step === 0 ? 'EERSTE INDRUK' : index === 0 ? 'OVERHEERSENDE GEDACHTE' : 'OOK SPEELT MEE') + '</span><h3>' + escapeHTML(thought.title) + '</h3><p>' + escapeHTML(thought.text) + '</p></article>').join('') +
+      '</div><p class="teacher-thought-note">Gedachten binnen dit fictieve gesprek.</p></aside>';
+    const message = (speaker,text) => '<div class="chat-message ' + (speaker === 'student' ? 'user-message' : 'ai-message') + '">' +
+      (speaker === 'teacher' ? '<span class="message-avatar teacher-avatar" aria-hidden="true">D</span>' : '') +
+      '<div class="message-body"><span class="message-label">' + (speaker === 'teacher' ? 'Docent' : 'Jij') + '</span><div class="bubble">' + escapeHTML(text) + '</div></div>' +
+      (speaker === 'student' ? '<span class="message-avatar user-avatar" aria-hidden="true">J</span>' : '') + '</div>';
+    if (teacherSession.finished) {
+      const outcome = teacherSession.outcome, stats = outcome.stats;
+      const band = value => value >= 70 ? 'Hoog' : value >= 40 ? 'Gemiddeld' : 'Laag';
+      app.innerHTML = '<section class="teacher-ending animate" aria-labelledby="teacher-end-title"><p class="eyebrow">HET GESPREK IS AFGEROND</p><p class="teacher-boundary">Het geduld van de docent is op.</p><h1 id="teacher-end-title">' + escapeHTML(outcome.title) + '</h1>' +
+        '<div class="teacher-verdict"><span class="message-label">Je docent</span><p>' + escapeHTML(outcome.text) + '</p></div>' +
+        '<div class="teacher-impressions" aria-label="De indruk van je docent">' +
+        [['credibility','Geloofwaardigheid'],['understanding','Begrip'],['doubt','Twijfel aan je verhaal'],['openness','Bereidheid tot meedenken']].map(([key,label]) =>
+          '<article class="teacher-impression"><h2>' + label + '</h2><strong>' + band(stats[key]) + ' <small>(' + stats[key] + '/100)</small></strong>' + '<div class="impression-track ' + (key === 'doubt' ? 'doubt' : '') + '" aria-hidden="true"><span style="width:' + stats[key] + '%"></span></div></article>').join('') +
+        '</div><p class="teacher-boundary">' + (outcome.kind === 'reconsider' ? 'Een herbeoordeling is toegezegd; er is nog geen nieuwe beoordeling. Je oorspronkelijke resultaten blijven zichtbaar.' : 'Je oorspronkelijke beoordelingen blijven staan.') + '</p>' +
+        '<details class="teacher-transcript"><summary>Lees het gesprek terug</summary><div>' + teacherSession.messages.map(m => message(m.speaker,m.text)).join('') + '</div></details>' +
+        '<button class="button secondary" data-results>Bekijk mijn beoordelingen</button><button class="text-button" data-restart>Start een nieuwe studieweek</button></section>';
+      return;
+    }
+    const transcript = teacherSession.messages.length ? teacherSession.messages.map(m => message(m.speaker,m.text)).join('') :
+      '<div class="teacher-start-note"><p class="eyebrow">NA DE BEOORDELING</p><p>Je docent heeft je resultaten en je keuzelogboek erbij. Begin het gesprek.</p></div>';
+    app.innerHTML = '<div class="teacher-workspace">' + metrics + '<section class="conversation teacher-shell" aria-label="Gesprek met je docent"><header class="conversation-header"><div class="ai-header"><span class="ai-avatar teacher-avatar">D</span><div><strong>Je docent</strong><small>Nabespreking van je studieweek</small></div></div><button class="button secondary mini" data-results>Beoordelingen</button></header>' +
+      '<div class="chat-messages teacher-messages" role="log" aria-label="Jouw gesprek met de docent" aria-live="off" tabindex="0">' + transcript + '</div>' +
+      '<section class="choice-composer teacher-composer" aria-label="Kies je antwoord"><div class="composer-heading"><div><span class="eyebrow">' + (teacherSession.step === 0 ? 'BEGIN HET GESPREK' : 'JOUW ANTWOORD') + '</span><p>Wat wil je zeggen?</p></div></div><div class="choice-grid">' +
+      teacher.options(teacherSession).map(o => '<button class="button secondary" data-teacher-answer="' + o.id + '">' + escapeHTML(o.text) + '</button>').join('') + '</div></section></section>' + thoughtPanel + '</div>';
+    const chat = app.querySelector('.teacher-messages');
+    if (chat) chat.scrollTop = chat.scrollHeight;
   }
   function render() {
+    document.body.classList.remove('teacher-chat','teacher-outcome');
     document.body.classList.toggle('playing', state.started && !state.finished);
     document.body.classList.toggle('welcome', !state.started);
     document.body.classList.toggle('finished', state.finished);
     if (!state.started) renderIntro(); else if (state.finished) renderResults(); else renderGame();
   }
-  function reset() { state = createState(); render(); window.scrollTo({ top: 0, behavior: 'instant' }); }
+  function reset() { teacherSession = null; state = createState(); render(); window.scrollTo({ top: 0, behavior: 'instant' }); }
   app.addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
     if (button.hasAttribute('data-start')) { state.started = true; render(); return; }
+    if (button.hasAttribute('data-teacher-answer')) {
+      if (teacherSession && globalThis.TeacherConversation.answer(teacherSession,button.dataset.teacherAnswer)) {
+        renderDocent();
+        if (teacherSession.finished) window.scrollTo({ top: 0, behavior: 'instant' });
+        else app.querySelector('.teacher-composer button')?.focus({ preventScroll: true });
+      }
+      return;
+    }
     if (button.hasAttribute('data-docent')) { renderDocent(); window.scrollTo({ top: 0, behavior: 'instant' }); return; }
     if (button.hasAttribute('data-results')) { renderResults(); return; }
     if (button.hasAttribute('data-restart')) { dialog.showModal(); return; }
