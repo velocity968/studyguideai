@@ -1,6 +1,6 @@
 # Docentgesprek
 
-Na de beoordelingen opent een chat met docentwaarden en geduld links; de rechterzijde blijft leeg. De student begint zelf en kiest zes keer uit drie antwoorden. Alle tekst is Nederlands, net als de bestaande simulatie.
+Na de beoordelingen opent een chat met docentwaarden en geduld links; de rechterzijde blijft leeg. De student begint zelf en kiest acht keer uit drie antwoorden. Alle tekst is Nederlands, net als de bestaande simulatie.
 
 ## Context uit de studieweek
 
@@ -10,7 +10,7 @@ Claims over controles en tijdgebruik worden vergeleken met het logboek. Noodzake
 
 ## Docentwaarden en geduld
 
-Vier waarden van 0 tot 100: geloofwaardigheid, begrip, twijfel en bereidheid tot meedenken. Beginwaarden volgen uit het spelverloop; antwoorden veranderen de indrukken. Deze staan tijdens het gesprek in een linkerkolom als waarden van 0 tot 100 met balkjes. Na elk antwoord tonen badges de werkelijke stijging of daling; minder twijfel wordt als gunstig gemarkeerd. De eindpagina behoudt de vier indrukken en toont ook hun eindwaarden.
+Vier waarden van 0 tot 100: geloofwaardigheid, begrip, twijfel en bereidheid tot meedenken. Iedere docent start neutraal: geloofwaardigheid 50, begrip 50, twijfel 0 en bereidheid tot meedenken 50. Het spelverloop wordt pas bij de bespreking van antwoorden als context gebruikt. Deze staan tijdens het gesprek in een linkerkolom als waarden van 0 tot 100 met balkjes. Na elk antwoord tonen badges de werkelijke stijging of daling; minder twijfel wordt als gunstig gemarkeerd. De eindpagina behoudt de vier indrukken en toont ook hun eindwaarden.
 
 ## Uitkomsten
 
@@ -34,15 +34,24 @@ Alleen dan is de kans 0,5–2%, afhankelijk van de indrukken. Dit is een fictiev
 
 ## Validatie
 
-Alle 729 antwoordpaden zijn doorlopen voor vier verschillende geschiedenisprofielen: 2.916 gesprekken. Getest: eerlijke en onjuiste claims, noodzakelijke pauzes, scoregrenzen, alle-opdrachten-gehaald, de zeldzame heroverweging, onveranderde beoordelingen en een echte afgeronde spelroute. Daarnaast is de loting gecontroleerd over 10.000 vaste waarden.
+Alle 6.561 antwoordpaden zijn doorlopen voor vier verschillende geschiedenisprofielen: 26.244 gesprekken. Getest: eerlijke en onjuiste claims, noodzakelijke pauacht, scoregrenzen, alle-opdrachten-gehaald, de zeldzame heroverweging, onveranderde beoordelingen en een echte afgeronde spelroute. Daarnaast is de loting gecontroleerd over 10.000 vaste waarden.
 
-De integratiecontrole omvatte resultaten → zes chatbeurten → vier eindindrukken → terug naar resultaten → heropenen zonder nieuwe loting → nieuwe studieweek. Er was in deze werksessie geen bruikbare uitvoeromgeving; browserweergave en visuele layout zijn nog niet gecontroleerd.
+De integratiecontrole omvatte resultaten → acht chatbeurten → vier eindindrukken → terug naar resultaten → heropenen zonder nieuwe loting → nieuwe studieweek. Er was in deze werksessie geen bruikbare uitvoeromgeving; browserweergave en visuele layout zijn nog niet gecontroleerd.
 
 
 ## Antwoordbudget
 
-Geduld begint op zes antwoorden en neemt per geldig antwoord precies één af. Bij nul volgt direct de afsluiting en zijn geen nieuwe antwoorden mogelijk. Ongeldige antwoorden en navigeren kosten geen geduld. Teruggaan naar beoordelingen en heropenen herstellen geen pogingen en wijzigen de uitkomst niet. Een nieuwe studieweek wist het gesprek.
+Geduld begint op acht antwoorden en neemt per geldig antwoord precies één af. Bij nul volgt direct de afsluiting en zijn geen nieuwe antwoorden mogelijk. Ongeldige antwoorden en navigeren kosten geen geduld. Teruggaan naar beoordelingen en heropenen herstellen geen pogingen en wijzigen de uitkomst niet. Een nieuwe studieweek wist het gesprek.
 
 `patience`, `maxPatience` en `lastChanges` staan in de gesprekstoestand. `lastChanges` bevat de daadwerkelijke verschillen na begrenzing van de waarden op 0–100. De linkerkolom volgt de indeling van de studieweek; de rechterzijde blijft leeg. Op smalle schermen staat het paneel boven het gesprek. Er worden geen invloedsscores vooraf op de antwoordknoppen getoond.
 
-De geautomatiseerde controles omvatten ook het aflopen van zes naar nul, daadwerkelijke delta's op alle 2.916 testpaden en de aansluiting van de linkerkolom op het chatverloop. Visuele browsercontrole blijft nodig.
+De geautomatiseerde controles omvatten ook het aflopen van acht naar nul, daadwerkelijke delta's op alle 26.244 testpaden en de aansluiting van de linkerkolom op het chatverloop. Visuele browsercontrole blijft nodig.
+
+
+## Afstemming van de gesprekseffecten
+
+Er zijn acht beurten met drie opties: opening, gebruik van AI, tijdverdeling, bewijs, inhoudelijke criteria, verbetering, verantwoordelijkheid en concreet verzoek. Kleine verschuivingen liggen gewoonlijk rond 1–5; grotere negatieve effecten rond 8–12 volgen bijvoorbeeld op onbewezen claims of het afschuiven van verantwoordelijkheid.
+
+De openingskeuze om AI-advies open te bespreken geeft +3 geloofwaardigheid, 0 begrip, 0 twijfel en +3 bereidheid. AI de schuld geven geeft −3, −4, +5 en −4. Bij een negatieve beoordeling vragen waarom alleen afvinken niet voldoende was geeft −4, −3, +12 en −10. Bij een volledig positieve beoordeling blijft een reflectieve vraag over controleren constructief.
+
+Tijdens het gesprek blijven de werkelijke delta's zichtbaar. Het eindscherm toont uitsluitend de eindwaarden en de conclusie: geen plus- of minbadges. De kansvoorwaarden en beoordeling van het oorspronkelijke werk zijn ongewijzigd. Alle 6.561 antwoordpaden voor vier profielen (26.244 gesprekken) zijn gecontroleerd, plus de loting en schermnavigatie.

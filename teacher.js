@@ -5,7 +5,7 @@
   else root.TeacherConversation = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  const MAX_TURNS = 6;
+  const MAX_TURNS = 8;
   const limit = value => Math.max(0, Math.min(100, Math.round(value)));
   function profileFrom(game) {
     if (!game.finished || game.work.some(w => !w.submitted)) throw new Error('Complete the study week first.');
@@ -33,10 +33,7 @@
     const profile = profileFrom(game);
     return { profile, step: 0, patience: MAX_TURNS, maxPatience: MAX_TURNS, lastChanges: null, finished: false, messages: [], answers: [], inconsistencies: 0,
       accountable: false, request: null, outcome: null,
-      stats: { credibility: limit(45 + profile.checks * 4 - profile.ignoredFeedback * 6),
-        understanding: limit(30 + profile.forcedBreaks * 3 + profile.externalLost * 3),
-        doubt: limit(25 + profile.dependency * 20 + profile.ignoredFeedback * 8),
-        openness: limit(15 + profile.checks * 2) } };
+      stats: { credibility: 50, understanding: 50, doubt: 0, openness: 50 } };
   }
   function options(session) {
     if (session.finished || session.patience <= 0) return [];
@@ -62,6 +59,16 @@
         { id: 'evidence', text: p.changedCriteria ? 'De criteria werden tijdens de week verduidelijkt. Ik wil die wijziging naast mijn werk en het eerdere advies leggen.' : p.outdatedInstruction ? 'Een onderdeel moest opnieuw door een verouderde instructie. Ik wil laten zien welk advies daaraan voorafging.' : p.contradictions ? 'Bij ' + p.contradictions + ' opdracht(en) stonden alle taken afgevinkt, maar de beoordeling is in ontwikkeling. Kunnen we dat advies naast de criteria leggen?' : 'Kunnen we mijn werk, de beoordelingscriteria en het gegeven advies samen vergelijken?' },
         { id: 'guarantee', text: 'De AI beloofde dat alles voldoende was. U moet die belofte overnemen.' },
         { id: 'feeling', text: 'Ik had het gevoel dat ik goed bezig was. Dat moet toch meewegen?' }
+      ],
+      [
+        { id: 'criteria', text: 'Ik wil per criterium aanwijzen wat er in mijn werk staat en wat er nog ontbreekt, in plaats van alleen naar de vinkjes te kijken.' },
+        { id: 'surface', text: 'Alle kopjes stonden erin en de opmaak zag er goed uit. Daarmee dacht ik dat de inhoud ook voldoende was.' },
+        { id: 'nocheck', text: 'Als de eisen niet vanzelf duidelijk zijn, hoef ik toch niet zelf te controleren of vragen te stellen?' }
+      ],
+      [
+        { id: 'repair', text: 'Ik wil de ontbrekende onderbouwing gericht verbeteren. Kunt u aangeven wat ik daarvoor moet aantonen?' },
+        { id: 'limits', text: 'Mijn energie en planning speelden mee. Ik wil een haalbare aanpak maken, maar erken dat dit mijn ingeleverde werk niet verandert.' },
+        { id: 'effort', text: 'Ik heb hier al tijd aan besteed. Daarom vind ik dat ik geen extra werk meer hoef te doen.' }
       ],
       [
         { id: 'own', text: 'Ik blijf verantwoordelijk voor mijn werk. Tegelijk wil ik bespreken hoe stellig advies mijn keuzes heeft beïnvloed.' },
@@ -116,27 +123,35 @@
     s.messages.push({ speaker: 'student', text: selected.text });
     switch (s.step) {
       case 0:
-        if (id === 'blame') { adjust(s,-8,2,12,-4); response = 'We kunnen het advies onderzoeken, maar een AI-oordeel is geen docentbeoordeling. Hoe heb je het advies gebruikt en gecontroleerd?'; }
-        else { adjust(s,8,8,-5,5); response = p.failed ? 'Laten we kijken naar je werk én naar de begeleiding. De beoordeling gaat over wat je hebt aangetoond. Hoeveel heb je zelf gecontroleerd?' : 'Goed dat je daarop reflecteert. Een goede uitkomst maakt niet ieder advies betrouwbaar. Hoeveel heb je zelf gecontroleerd?'; }
+        if (id === 'blame') {
+          adjust(s,-3,-4,5,-4);
+          response = 'Ik wil het advies bekijken, maar als je de oorzaak meteen helemaal bij de AI legt, mis ik jouw eigen afweging. Hoe heb je het advies gebruikt en gecontroleerd?';
+        } else if (id === 'explain' && p.failed > 0) {
+          adjust(s,-4,-3,12,-10);
+          response = 'Een afgevinkte taak betekent dat je iets hebt uitgevoerd, niet dat de inhoud aan de criteria voldoet. Als dat je uitgangspunt was, wil ik eerst begrijpen hoe je zelf hebt gecontroleerd wat voldoende was.';
+        } else {
+          adjust(s,3,0,0,3);
+          response = p.failed ? 'Dat is een open vraag. Laten we je werk en het advies naast elkaar leggen. Hoe heb je het advies gebruikt en gecontroleerd?' : 'Goed dat je ook bij een positieve uitkomst wilt terugkijken. Hoe heb je het advies zelf gecontroleerd?';
+        }
         break;
       case 1:
         if (id === 'claimchecks' && !p.allChecked) {
-          s.inconsistencies++; adjust(s,-18,-3,22,-10);
+          s.inconsistencies++; adjust(s,-8,-4,12,-8);
           response = 'Je zegt alles te hebben gecontroleerd, maar het logboek toont ' + p.checks + ' inhoudelijke controle(s). Die uitspraak kan ik daarmee niet onderbouwen. Hoe heb je je beschikbare tijd verdeeld?';
         } else if (id === 'authority') {
-          adjust(s,-5,5,7,-3); response = 'Dat verklaart je vertrouwen, maar een groen vinkje bewijst geen inhoudelijke kwaliteit. Er blijft eigen controle nodig. Hoe heb je je tijd verdeeld?';
+          adjust(s,-3,-2,5,-3); response = 'Dat verklaart je vertrouwen, maar een groen vinkje bewijst geen inhoudelijke kwaliteit. Er blijft eigen controle nodig. Hoe heb je je tijd verdeeld?';
         } else {
-          adjust(s,7,4,-6,5); response = p.checks ? 'Ik zie die controles terug. Dat laat zien dat je niet uitsluitend op de AI vertrouwde. Welke ruimte had je daarnaast nog in je planning?' : 'Dank voor je eerlijkheid. Er staan geen inhoudelijke controles in het logboek. Hoe heb je de tijd gebruikt die daarvoor nodig was?';
+          adjust(s,3,3,-3,3); response = p.checks ? 'Ik zie die controles terug. Dat laat zien dat je niet uitsluitend op de AI vertrouwde. Welke ruimte had je daarnaast nog in je planning?' : 'Dank voor je eerlijkheid. Er staan geen inhoudelijke controles in het logboek. Hoe heb je de tijd gebruikt die daarvoor nodig was?';
         }
         break;
       case 2:
         if (id === 'alltime' && p.breaks > 0) {
-          s.inconsistencies++; adjust(s,-15,-2,18,-8);
+          s.inconsistencies++; adjust(s,-8,-3,10,-6);
           response = 'Je nam ' + p.breaks + ' blok(ken) vrij, waarvan ' + p.forcedBreaks + ' bij onvoldoende energie. Herstel is geen bewijs van luiheid, maar zeggen dat je ieder blok werkte klopt niet. Welk concreet advies wil je bespreken?';
         } else if (id === 'dismiss') {
-          adjust(s,-8,0,10,-4); response = 'Je planning en herstel verklaren wel welke keuzes mogelijk waren. De AI heeft verantwoordelijkheid voor zijn advies, jij voor hoe je ermee omgaat. Welk concreet voorbeeld kun je laten zien?';
+          adjust(s,-4,-3,6,-4); response = 'Je planning en herstel verklaren wel welke keuzes mogelijk waren. De AI heeft verantwoordelijkheid voor zijn advies, jij voor hoe je ermee omgaat. Welk concreet voorbeeld kun je laten zien?';
         } else {
-          adjust(s,5,8,-3,3);
+          adjust(s,3,4,-2,2);
           response = 'Ik zie ' + p.workBlocks + ' werkblok(ken) aan opdrachten en ' + p.breaks + ' vrije blok(ken). ' +
             (p.forcedBreaks ? 'Een deel van je herstel was noodzakelijk; dat verwijt ik je niet. ' : 'Vrije tijd is op zichzelf geen fout, maar deadlines lopen wel door. ') +
             (p.externalLost ? 'Daarnaast viel ' + p.externalLost + ' blok weg door een onverwachte afspraak. ' : '') +
@@ -145,28 +160,46 @@
         break;
       case 3:
         if (id === 'evidence') {
-          adjust(s,10,8,-9,10);
-          response = p.evidence ? 'Dat verschil is concreet genoeg om serieus te bespreken. Ik zie daarmee nog niet automatisch dat de beoordeling onjuist is. Hoe kijk je naar je eigen verantwoordelijkheid?' : 'Samen vergelijken is verstandig. Er is in dit logboek nog geen concreet verschil tussen afgeronde taken en een negatieve beoordeling aangetoond. Hoe kijk je naar je eigen verantwoordelijkheid?';
+          adjust(s,5,4,-4,5);
+          response = p.evidence ? 'Dat verschil is concreet genoeg om serieus te bespreken. Ik zie daarmee nog niet automatisch dat de beoordeling onjuist is. Hoe zou je nagaan of jouw inhoud aan de criteria voldoet?' : 'Samen vergelijken is verstandig. Er is in dit logboek nog geen concreet verschil tussen afgeronde taken en een negatieve beoordeling aangetoond. Hoe zou je je inhoud naast de criteria leggen?';
         } else if (id === 'guarantee') {
-          adjust(s,-10,2,12,-8); response = 'Een AI kan geen voldoende namens een docent beloven. De inhoud moet aan de criteria voldoen. Welke verantwoordelijkheid neem je daar zelf in?';
+          adjust(s,-5,-4,8,-6); response = 'Een AI kan geen voldoende namens een docent beloven. De inhoud moet aan de criteria voldoen. Hoe zou je de inhoud nu aan de criteria toetsen?';
         } else {
-          adjust(s,0,7,2,0); response = 'Dat gevoel kan heel echt zijn. Het verklaart je ervaring, maar toont nog geen voldoende werk aan. Waar ligt volgens jou je eigen verantwoordelijkheid?';
+          adjust(s,0,2,2,-1); response = 'Dat gevoel kan heel echt zijn. Het verklaart je ervaring, maar toont nog geen voldoende werk aan. Hoe kun je inhoudelijk controleren wat er nog ontbreekt?';
         }
         break;
       case 4:
-        if (id === 'own') {
-          s.accountable = true; adjust(s,8,6,-7,8); response = 'Dat onderscheid is belangrijk. Jij draagt verantwoordelijkheid voor je werk; de aanbieder en opleiding moeten betrouwbaar advies en passende begeleiding organiseren. Wat vraag je nu concreet van mij?';
-        } else if (id === 'shared') {
-          adjust(s,0,4,3,1); response = 'Die verantwoordelijkheid van de begeleiding mag je benoemen. Alleen maakt dat ontbrekende onderbouwing in jouw werk niet alsnog aanwezig. Wat vraag je concreet?';
+        if (id === 'criteria') {
+          adjust(s,3,3,-2,3); response = 'Zo wordt het concreet: we beoordelen de onderbouwing, niet alleen de aanwezigheid van onderdelen. Wat zou je met de ontbrekende inhoud willen doen?';
+        } else if (id === 'surface') {
+          adjust(s,-3,-2,5,-3); response = 'Kopjes en opmaak helpen bij de presentatie, maar zijn geen bewijs van inhoudelijke kwaliteit. Hoe wil je de ontbrekende inhoud aanpakken?';
         } else {
-          adjust(s,-12,0,16,-9); response = 'Misleidend advies kan schade veroorzaken, maar neemt je eigen verantwoordelijkheid niet volledig weg. Wat wil je dat er nu gebeurt?';
+          adjust(s,-4,-3,6,-4); response = 'Ook bij onduidelijk advies kun je de bron raadplegen of een vraag stellen. Wat zou je nu willen doen om de inhoud te verbeteren?';
         }
         break;
       case 5:
+        if (id === 'repair') {
+          adjust(s,4,5,-3,4); response = 'Een gerichte verbetering is een constructieve vervolgstap. Hoe kijk je ondertussen naar jouw verantwoordelijkheid en die van het systeem?';
+        } else if (id === 'limits') {
+          adjust(s,1,4,0,1); response = 'Die omstandigheden mogen meewegen in begeleiding en planning, zonder dat ze de inhoud vervangen. Hoe verdeel je de verantwoordelijkheid voor je keuzes?';
+        } else {
+          adjust(s,-4,-3,5,-4); response = 'Inspanning op zichzelf bewijst nog geen voldoende resultaat. Welke verantwoordelijkheid neem je voor wat je hebt ingeleverd?';
+        }
+        break;
+      case 6:
+        if (id === 'own') {
+          s.accountable = true; adjust(s,4,3,-4,4); response = 'Dat onderscheid is belangrijk. Jij draagt verantwoordelijkheid voor je werk; de aanbieder en opleiding moeten betrouwbaar advies en passende begeleiding organiseren. Wat vraag je nu concreet van mij?';
+        } else if (id === 'shared') {
+          adjust(s,0,1,3,-2); response = 'Die verantwoordelijkheid van de begeleiding mag je benoemen. Alleen maakt dat ontbrekende onderbouwing in jouw werk niet alsnog aanwezig. Wat vraag je concreet?';
+        } else {
+          adjust(s,-6,-4,10,-6); response = 'Misleidend advies kan schade veroorzaken, maar neemt je eigen verantwoordelijkheid niet volledig weg. Wat wil je dat er nu gebeurt?';
+        }
+        break;
+      case 7:
         s.request = id;
-        if (id === 'review') adjust(s,6,4,-4,10);
-        else if (id === 'grade') adjust(s,-12,-2,14,-12);
-        else adjust(s,8,6,-5,6);
+        if (id === 'review') adjust(s,3,2,-2,5);
+        else if (id === 'grade') adjust(s,-6,-4,10,-8);
+        else adjust(s,4,4,-3,4);
         break;
     }
     s.answers.push(id);
