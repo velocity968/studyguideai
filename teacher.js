@@ -287,7 +287,7 @@
     add(true,'reserve',1,'Ik laat je uitleg bezinken.',
       'Ik wil nog scherper krijgen wat er gebeurde, wat je zelf deed en wat je nu van mij vraagt.');
     const ranked = candidates.sort((a,b) => b.priority-a.priority);
-    const result = ranked.slice(0,3).map(({id,title,text}) => ({id,title,text}));
+    const result = ranked.slice(0,1).map(({id,title,text}) => ({id,title,text}));
     return result;
   }
   return { profileFrom, create, options, answer, thoughts };

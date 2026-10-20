@@ -52,7 +52,7 @@ for (const profile of [fixture(),fixture({checks:0}),fixture({failed:0}),fixture
       assert(teacher.answer(current,choices[choice].id,()=>0));
       const snapshot = JSON.stringify(current);
       const inner = teacher.thoughts(current);
-      assert(inner.length >= 1 && inner.length <= 3,'One to three current thoughts');
+      assert(inner.length === 1,'Exactly one dominant thought');
       assert(new Set(inner.map(t=>t.id)).size === inner.length,'Distinct thoughts');
       inner.forEach(t=>{assert(t.title && t.text,'Complete thought');observedThoughts.add(t.id);});
       assert(JSON.stringify(inner) === JSON.stringify(teacher.thoughts(current)),'Thoughts stable on rerender');

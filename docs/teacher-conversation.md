@@ -60,11 +60,11 @@ Tijdens het gesprek blijven de werkelijke delta's zichtbaar. Het eindscherm toon
 
 Delta-kleuren volgen uitsluitend het teken: positief is groen, negatief is oranje en nul is neutraal. Dit geldt ook voor twijfel: een daling blijft oranje hoewel minder twijfel inhoudelijk gunstig is. De tekst onder de meters licht dat onderscheid toe. De eindpagina blijft vrij van delta-badges.
 
-Rechts staat een paneel met de fictieve gedachten van de docent. Het begint met één neutrale luisterende gedachte. Na een antwoord selecteert `thoughts(session)` maximaal drie gedachten uit 32 contextregels, gesorteerd op dominantie. De hoofdoorzaak staat bovenaan. Niet iedere waarde wordt afzonderlijk in een standaardtekst vertaald: de combinatie van waarden, hun verhouding, de laatste antwoorden, erkenning van verantwoordelijkheid, feitelijke inconsistenties en zichtbare gebeurtenissen telt mee.
+Rechts staat een paneel met de fictieve gedachten van de docent. Het begint met één neutrale luisterende gedachte. Na een antwoord selecteert `thoughts(session)` één dominante gedachte uit 32 contextregels, gesorteerd op dominantie. De hoofdoorzaak staat bovenaan. Niet iedere waarde wordt afzonderlijk in een standaardtekst vertaald: de combinatie van waarden, hun verhouding, de laatste antwoorden, erkenning van verantwoordelijkheid, feitelijke inconsistenties en zichtbare gebeurtenissen telt mee.
 
 Voorbeelden: twijfel aan een verhaal, verantwoordelijkheid afschuiven, verwarring over afgevinkt/voldoende, begrip zonder grond voor een aangepaste beoordeling, medeleven terwijl onderbouwing ontbreekt, open luisteren, erkenning van eigen keuzes, concreet bewijs en bereidheid tot een verbeterplan. Onbewezen uitspraken hebben een hogere prioriteit dan een algemene positieve indruk. Op kleine schermen staat dit paneel onder de chat.
 
-De gedachten zijn deterministisch: dezelfde gespreksstaat geeft dezelfde tekst, zonder loting of wijziging van scores, geduld of uitkomst. De 32 gedachtepatronen kwamen alle voor in de gecontroleerde antwoordpaden, naast de neutrale beginstaat. Alle 26.244 gesprekken zijn opnieuw gecontroleerd op begrensde waarden, één tot drie unieke gedachten, onveranderde staat en stabiele herweergave. De schermcontrole omvatte daarnaast plus-twijfel in groen, min-twijfel in oranje en behoud van de rustige eindpagina.
+De gedachten zijn deterministisch: dezelfde gespreksstaat geeft dezelfde tekst, zonder loting of wijziging van scores, geduld of uitkomst. De 32 gedachtepatronen kwamen alle voor in de gecontroleerde antwoordpaden, naast de neutrale beginstaat. Alle 26.244 gesprekken zijn opnieuw gecontroleerd op begrensde waarden, precies één dominante gedachte, onveranderde staat en stabiele herweergave. De schermcontrole omvatte daarnaast plus-twijfel in groen, min-twijfel in oranje en behoud van de rustige eindpagina.
 
 ## Recente presentatie- en balanswijziging
 
@@ -77,3 +77,12 @@ De antwoordeffecten op geloofwaardigheid, begrip en bereidheid zijn verdubbeld t
 De ontvangstpagina heeft links de botbegroeting en startknop, en rechts een kader dat de simulatie uitlegt: drie fictieve opdrachten met deadlines, keuzes rond AI-advies, beoordelingen en daarna de mogelijkheid tot een docentgesprek. Op mobiel worden beide delen onder elkaar geplaatst.
 
 Alle 26.244 gespreksroutes en de verdeling van de zeldzame uitkomst zijn opnieuw gecontroleerd. Schermintegratie controleert het verborgen geduldaantal, de kleuren bij twijfel, het grotere score-effect en de tekstvolgorde op de afsluiting. Visuele browsercontrole staat nog open.
+
+
+## Vereenvoudiging en licht thema
+
+De docent toont uitsluitend de hoogst gerangschikte gedachte. De onderliggende contextregels blijven behouden. Alle 26.244 gespreksroutes blijven getest; de test vereist nu exact één gedachte per staat.
+
+Twijfel is gecontroleerd en niet aangepast: eerlijke onderbouwing verlaagt twijfel met 2–4 punten, onbewezen claims en afschuiven kunnen deze met 5–12 verhogen. Omdat twijfel op nul begint en niet negatief kan worden, is blijvend lage twijfel bij een betrouwbaar gesprek logisch.
+
+De interface gebruikt een licht wit/blauw thema met zachte blauwe docent- en AI-berichten, blauwe eigen berichten en groene/oranje feedback. De ontvangstpagina heeft geen extra ster, dubbele editieaanduiding, pijlen bij de startknop of succeszin, of bijschrift onder de startknop. De spelregels zijn ongewijzigd. Visuele browsercontrole staat nog open.
