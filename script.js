@@ -341,6 +341,21 @@ if (typeof document !== 'undefined') {
     if (!teacherSession) teacherSession = teacher.create(state);
     document.body.classList.add('teacher-chat');
     document.body.classList.toggle('teacher-outcome',teacherSession.finished);
+    const metricLabels = [['credibility','Geloofwaardigheid'],['understanding','Begrip'],['doubt','Twijfel aan je verhaal'],['openness','Bereidheid tot meedenken']];
+    const deltaFor = key => {
+      if (!teacherSession.lastChanges) return '';
+      const delta = teacherSession.lastChanges[key];
+      const favorable = key === 'doubt' ? delta < 0 : delta > 0;
+      return '<span class="teacher-delta ' + (delta === 0 ? 'neutral' : favorable ? 'favorable' : 'unfavorable') + '" aria-label="Verandering na je laatste antwoord: ' + (delta > 0 ? 'plus ' : '') + delta + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
+    };
+    const metrics = '<aside class="teacher-metrics" aria-label="Indruk en geduld van je docent"><p class="eyebrow">JE DOCENT</p><h2>Het gesprek</h2>' +
+      '<div class="teacher-patience"><div class="teacher-metric-label"><span>Geduld</span><strong>' + teacherSession.patience + '<small> / ' + teacherSession.maxPatience + '</small></strong>' +
+      (teacherSession.step ? '<span class="teacher-delta unfavorable">−1</span>' : '') + '</div>' +
+      '<div class="stat-track" role="meter" aria-label="Resterende antwoorden" aria-valuemin="0" aria-valuemax="' + teacherSession.maxPatience + '" aria-valuenow="' + teacherSession.patience + '"><span style="width:' + teacherSession.patience / teacherSession.maxPatience * 100 + '%"></span></div>' +
+      '<p>' + teacherSession.patience + ' antwoord' + (teacherSession.patience === 1 ? '' : 'en') + ' over</p></div>' +
+      '<div class="teacher-live-metrics">' + metricLabels.map(([key,label]) => '<div class="teacher-live-metric"><div class="teacher-metric-label"><span>' + label + '</span><strong>' + teacherSession.stats[key] + '</strong>' + deltaFor(key) + '</div>' +
+      '<div class="stat-track ' + (key === 'doubt' ? 'teacher-doubt' : '') + '" role="meter" aria-label="' + label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + teacherSession.stats[key] + '"><span style="width:' + teacherSession.stats[key] + '%"></span></div></div>').join('') + '</div>' +
+      '<p class="teacher-metric-note">' + (teacherSession.lastChanges ? 'Veranderingen na je laatste antwoord.' : 'Je antwoorden beïnvloeden de indruk van je docent.') + '</p><p class="teacher-metric-note">Minder twijfel is gunstig.</p></aside>';
     const message = (speaker,text) => '<div class="chat-message ' + (speaker === 'student' ? 'user-message' : 'ai-message') + '">' +
       (speaker === 'teacher' ? '<span class="message-avatar teacher-avatar" aria-hidden="true">D</span>' : '') +
       '<div class="message-body"><span class="message-label">' + (speaker === 'teacher' ? 'Docent' : 'Jij') + '</span><div class="bubble">' + escapeHTML(text) + '</div></div>' +
@@ -352,18 +367,18 @@ if (typeof document !== 'undefined') {
         '<div class="teacher-verdict"><span class="message-label">Je docent</span><p>' + escapeHTML(outcome.text) + '</p></div>' +
         '<div class="teacher-impressions" aria-label="De indruk van je docent">' +
         [['credibility','Geloofwaardigheid'],['understanding','Begrip'],['doubt','Twijfel aan je verhaal'],['openness','Bereidheid tot meedenken']].map(([key,label]) =>
-          '<article class="teacher-impression"><h2>' + label + '</h2><strong>' + band(stats[key]) + '</strong><div class="impression-track ' + (key === 'doubt' ? 'doubt' : '') + '" aria-hidden="true"><span style="width:' + stats[key] + '%"></span></div></article>').join('') +
-        '</div><p class="teacher-boundary">' + (outcome.kind === 'reconsider' ? 'Een herbeoordeling is toegezegd; er is nog geen nieuwe beoordeling. Je oorspronkelijke resultaten blijven zichtbaar.' : 'Je oorspronkelijke beoordelingen blijven staan.') + '</p>' +
+          '<article class="teacher-impression"><h2>' + label + '</h2><strong>' + band(stats[key]) + ' <small>(' + stats[key] + '/100)</small></strong>' + deltaFor(key) + '<div class="impression-track ' + (key === 'doubt' ? 'doubt' : '') + '" aria-hidden="true"><span style="width:' + stats[key] + '%"></span></div></article>').join('') +
+        '</div><p class="teacher-boundary">Geduld: ' + teacherSession.patience + ' / ' + teacherSession.maxPatience + ' · Je hebt al je antwoorden gebruikt.</p><p class="teacher-boundary">' + (outcome.kind === 'reconsider' ? 'Een herbeoordeling is toegezegd; er is nog geen nieuwe beoordeling. Je oorspronkelijke resultaten blijven zichtbaar.' : 'Je oorspronkelijke beoordelingen blijven staan.') + '</p>' +
         '<details class="teacher-transcript"><summary>Lees het gesprek terug</summary><div>' + teacherSession.messages.map(m => message(m.speaker,m.text)).join('') + '</div></details>' +
         '<button class="button secondary" data-results>Bekijk mijn beoordelingen</button><button class="text-button" data-restart>Start een nieuwe studieweek</button></section>';
       return;
     }
     const transcript = teacherSession.messages.length ? teacherSession.messages.map(m => message(m.speaker,m.text)).join('') :
       '<div class="teacher-start-note"><p class="eyebrow">NA DE BEOORDELING</p><p>Je docent heeft je resultaten en je keuzelogboek erbij. Begin het gesprek.</p></div>';
-    app.innerHTML = '<section class="conversation teacher-shell" aria-label="Gesprek met je docent"><header class="conversation-header"><div class="ai-header"><span class="ai-avatar teacher-avatar">D</span><div><strong>Je docent</strong><small>Nabespreking van je studieweek</small></div></div><button class="button secondary mini" data-results>Beoordelingen</button></header>' +
+    app.innerHTML = '<div class="teacher-workspace">' + metrics + '<section class="conversation teacher-shell" aria-label="Gesprek met je docent"><header class="conversation-header"><div class="ai-header"><span class="ai-avatar teacher-avatar">D</span><div><strong>Je docent</strong><small>Nabespreking van je studieweek</small></div></div><button class="button secondary mini" data-results>Beoordelingen</button></header>' +
       '<div class="chat-messages teacher-messages" role="log" aria-label="Jouw gesprek met de docent" aria-live="off" tabindex="0">' + transcript + '</div>' +
       '<section class="choice-composer teacher-composer" aria-label="Kies je antwoord"><div class="composer-heading"><div><span class="eyebrow">' + (teacherSession.step === 0 ? 'BEGIN HET GESPREK' : 'JOUW ANTWOORD') + '</span><p>Wat wil je zeggen?</p></div></div><div class="choice-grid">' +
-      teacher.options(teacherSession).map(o => '<button class="button secondary" data-teacher-answer="' + o.id + '">' + escapeHTML(o.text) + '</button>').join('') + '</div></section></section>';
+      teacher.options(teacherSession).map(o => '<button class="button secondary" data-teacher-answer="' + o.id + '">' + escapeHTML(o.text) + '</button>').join('') + '</div></section></section></div>';
     const chat = app.querySelector('.teacher-messages');
     if (chat) chat.scrollTop = chat.scrollHeight;
   }

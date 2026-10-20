@@ -5,6 +5,7 @@
   else root.TeacherConversation = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
+  const MAX_TURNS = 6;
   const limit = value => Math.max(0, Math.min(100, Math.round(value)));
   function profileFrom(game) {
     if (!game.finished || game.work.some(w => !w.submitted)) throw new Error('Complete the study week first.');
@@ -30,7 +31,7 @@
   }
   function create(game) {
     const profile = profileFrom(game);
-    return { profile, step: 0, finished: false, messages: [], answers: [], inconsistencies: 0,
+    return { profile, step: 0, patience: MAX_TURNS, maxPatience: MAX_TURNS, lastChanges: null, finished: false, messages: [], answers: [], inconsistencies: 0,
       accountable: false, request: null, outcome: null,
       stats: { credibility: limit(45 + profile.checks * 4 - profile.ignoredFeedback * 6),
         understanding: limit(30 + profile.forcedBreaks * 3 + profile.externalLost * 3),
@@ -38,7 +39,7 @@
         openness: limit(15 + profile.checks * 2) } };
   }
   function options(session) {
-    if (session.finished) return [];
+    if (session.finished || session.patience <= 0) return [];
     const p = session.profile;
     const result = p.failed === 0 ? 'alle ' + p.total + ' opdrachten gehaald' : p.failed + ' van de ' + p.total + ' opdrachten in ontwikkeling';
     const rows = [
@@ -106,10 +107,11 @@
     s.messages.push({ speaker: 'teacher', text });
   }
   function answer(s, id, random = Math.random) {
-    if (s.finished) return false;
+    if (s.finished || s.patience <= 0) return false;
     const selected = options(s).find(o => o.id === id);
     if (!selected) return false;
     const p = s.profile;
+    const before = { ...s.stats };
     let response;
     s.messages.push({ speaker: 'student', text: selected.text });
     switch (s.step) {
@@ -169,8 +171,10 @@
     }
     s.answers.push(id);
     s.step++;
+    s.patience = Math.max(0, s.patience - 1);
+    s.lastChanges = Object.fromEntries(Object.keys(s.stats).map(key => [key,s.stats[key] - before[key]]));
     if (response) s.messages.push({ speaker: 'teacher', text: response });
-    if (s.step === 6) finish(s,random);
+    if (s.patience === 0) finish(s,random);
     return true;
   }
   return { profileFrom, create, options, answer };

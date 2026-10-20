@@ -22,6 +22,7 @@ function play(state, ids = best, roll = 0.99) {
   return session;
 }
 const state = fixture(), original = JSON.stringify(state);
+assert(teacher.create(state).patience === 6,'Patience starts at six');
 const session = play(state);
 assert(session.finished && session.messages.length === 12,'Six student/teacher exchanges');
 assert(session.outcome.chance > 0 && session.outcome.chance <= .02,'Rare opportunity must be reachable and capped at 2%');
@@ -44,12 +45,16 @@ for (const profile of [fixture(),fixture({checks:0}),fixture({failed:0}),fixture
   for (let path=0;path<729;path++) {
     let n=path, current=teacher.create(profile);
     for (let step=0;step<6;step++) {
+      assert(current.patience === 6-step,'Patience equals remaining answers');
+      const beforeStats = {...current.stats};
       const choices=teacher.options(current), choice=n%3; n=Math.floor(n/3);
       assert(choices.length === 3,'Each turn needs three options');
       assert(teacher.answer(current,choices[choice].id,()=>0));
+      assert(current.patience === 5-step,'Each valid answer uses exactly one patience');
+      for (const key of Object.keys(beforeStats)) assert(current.lastChanges[key] === current.stats[key]-beforeStats[key],'Show actual delta, including score clamps');
       for (const value of Object.values(current.stats)) assert(value>=0 && value<=100,'Scores stay bounded');
     }
-    assert(current.finished && current.outcome,'Every path must end');
+    assert(current.finished && current.outcome && current.patience === 0,'Every path ends at zero patience');
     assert(current.outcome.chance<=.02,'Chance cap');
     if (current.outcome.kind === 'reconsider') rarePaths++;
     exhaustedPaths++;
