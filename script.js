@@ -261,6 +261,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CONFIG, 
 
 if (typeof document !== 'undefined') {
   let state = createState();
+  let teacherSession = null;
   const app = document.getElementById('app');
   const dialog = document.getElementById('restart-dialog');
   const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -323,6 +324,7 @@ if (typeof document !== 'undefined') {
     chat.scrollTop = oldCount === messageCount ? oldTop : chat.scrollHeight;
   }
   function renderResults() {
+    document.body.classList.remove('teacher-chat','teacher-outcome');
     app.innerHTML = `<section class="final-screen animate" aria-labelledby="results-title"><div class="finish-icon" aria-hidden="true">✓</div><p class="eyebrow">JE STUDIEWEEK IS AFGEROND</p><h1 id="results-title">Je beoordelingen<br>zijn binnen.</h1><p class="final-intro">Bekijk je resultaten. Daarna bespreek je met je docent hoe je week is verlopen.</p><div class="final-results">${ASSIGNMENTS.map((a, i) => {
       const result = state.work[i].submitted;
       const tone = result.label === 'Boven niveau' ? 'above' : result.label === 'Op niveau' ? 'good' : 'developing';
@@ -330,19 +332,61 @@ if (typeof document !== 'undefined') {
     }).join('')}</div><button class="button primary" data-docent>Verder naar het docentgesprek <span aria-hidden="true">↗</span></button><button class="text-button" data-restart>Opnieuw beginnen</button></section>`;
   }
   function renderDocent() {
-    app.innerHTML = `<section class="final-screen docent-next animate" aria-labelledby="docent-title"><div class="welcome-mark" aria-hidden="true">✦</div><p class="eyebrow">DE VOLGENDE STAP</p><h1 id="docent-title">In gesprek<br>met je docent.</h1><p class="final-intro">Je resultaten staan klaar. Het docentgesprek wordt in een volgende versie toegevoegd.</p><button class="button secondary" data-results>Terug naar mijn beoordelingen</button></section>`;
+    if (!state.finished) return;
+    const teacher = globalThis.TeacherConversation;
+    if (!teacher) {
+      app.innerHTML = '<section class="final-screen"><h1>Het gesprek kon niet laden.</h1><p>Ververs de pagina of controleer of teacher.js naast script.js staat.</p><button class="button secondary" data-results>Terug naar beoordelingen</button></section>';
+      return;
+    }
+    if (!teacherSession) teacherSession = teacher.create(state);
+    document.body.classList.add('teacher-chat');
+    document.body.classList.toggle('teacher-outcome',teacherSession.finished);
+    const message = (speaker,text) => '<div class="chat-message ' + (speaker === 'student' ? 'user-message' : 'ai-message') + '">' +
+      (speaker === 'teacher' ? '<span class="message-avatar teacher-avatar" aria-hidden="true">D</span>' : '') +
+      '<div class="message-body"><span class="message-label">' + (speaker === 'teacher' ? 'Docent' : 'Jij') + '</span><div class="bubble">' + escapeHTML(text) + '</div></div>' +
+      (speaker === 'student' ? '<span class="message-avatar user-avatar" aria-hidden="true">J</span>' : '') + '</div>';
+    if (teacherSession.finished) {
+      const outcome = teacherSession.outcome, stats = outcome.stats;
+      const band = value => value >= 70 ? 'Hoog' : value >= 40 ? 'Gemiddeld' : 'Laag';
+      app.innerHTML = '<section class="teacher-ending animate" aria-labelledby="teacher-end-title"><p class="eyebrow">HET GESPREK IS AFGEROND</p><h1 id="teacher-end-title">' + escapeHTML(outcome.title) + '</h1>' +
+        '<div class="teacher-verdict"><span class="message-label">Je docent</span><p>' + escapeHTML(outcome.text) + '</p></div>' +
+        '<div class="teacher-impressions" aria-label="De indruk van je docent">' +
+        [['credibility','Geloofwaardigheid'],['understanding','Begrip'],['doubt','Twijfel aan je verhaal'],['openness','Bereidheid tot meedenken']].map(([key,label]) =>
+          '<article class="teacher-impression"><h2>' + label + '</h2><strong>' + band(stats[key]) + '</strong><div class="impression-track ' + (key === 'doubt' ? 'doubt' : '') + '" aria-hidden="true"><span style="width:' + stats[key] + '%"></span></div></article>').join('') +
+        '</div><p class="teacher-boundary">' + (outcome.kind === 'reconsider' ? 'Een herbeoordeling is toegezegd; er is nog geen nieuwe beoordeling. Je oorspronkelijke resultaten blijven zichtbaar.' : 'Je oorspronkelijke beoordelingen blijven staan.') + '</p>' +
+        '<details class="teacher-transcript"><summary>Lees het gesprek terug</summary><div>' + teacherSession.messages.map(m => message(m.speaker,m.text)).join('') + '</div></details>' +
+        '<button class="button secondary" data-results>Bekijk mijn beoordelingen</button><button class="text-button" data-restart>Start een nieuwe studieweek</button></section>';
+      return;
+    }
+    const transcript = teacherSession.messages.length ? teacherSession.messages.map(m => message(m.speaker,m.text)).join('') :
+      '<div class="teacher-start-note"><p class="eyebrow">NA DE BEOORDELING</p><p>Je docent heeft je resultaten en je keuzelogboek erbij. Begin het gesprek.</p></div>';
+    app.innerHTML = '<section class="conversation teacher-shell" aria-label="Gesprek met je docent"><header class="conversation-header"><div class="ai-header"><span class="ai-avatar teacher-avatar">D</span><div><strong>Je docent</strong><small>Nabespreking van je studieweek</small></div></div><button class="button secondary mini" data-results>Beoordelingen</button></header>' +
+      '<div class="chat-messages teacher-messages" role="log" aria-label="Jouw gesprek met de docent" aria-live="off" tabindex="0">' + transcript + '</div>' +
+      '<section class="choice-composer teacher-composer" aria-label="Kies je antwoord"><div class="composer-heading"><div><span class="eyebrow">' + (teacherSession.step === 0 ? 'BEGIN HET GESPREK' : 'JOUW ANTWOORD') + '</span><p>Wat wil je zeggen?</p></div></div><div class="choice-grid">' +
+      teacher.options(teacherSession).map(o => '<button class="button secondary" data-teacher-answer="' + o.id + '">' + escapeHTML(o.text) + '</button>').join('') + '</div></section></section>';
+    const chat = app.querySelector('.teacher-messages');
+    if (chat) chat.scrollTop = chat.scrollHeight;
   }
   function render() {
+    document.body.classList.remove('teacher-chat','teacher-outcome');
     document.body.classList.toggle('playing', state.started && !state.finished);
     document.body.classList.toggle('welcome', !state.started);
     document.body.classList.toggle('finished', state.finished);
     if (!state.started) renderIntro(); else if (state.finished) renderResults(); else renderGame();
   }
-  function reset() { state = createState(); render(); window.scrollTo({ top: 0, behavior: 'instant' }); }
+  function reset() { teacherSession = null; state = createState(); render(); window.scrollTo({ top: 0, behavior: 'instant' }); }
   app.addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
     if (button.hasAttribute('data-start')) { state.started = true; render(); return; }
+    if (button.hasAttribute('data-teacher-answer')) {
+      if (teacherSession && globalThis.TeacherConversation.answer(teacherSession,button.dataset.teacherAnswer)) {
+        renderDocent();
+        if (teacherSession.finished) window.scrollTo({ top: 0, behavior: 'instant' });
+        else app.querySelector('.teacher-composer button')?.focus({ preventScroll: true });
+      }
+      return;
+    }
     if (button.hasAttribute('data-docent')) { renderDocent(); window.scrollTo({ top: 0, behavior: 'instant' }); return; }
     if (button.hasAttribute('data-results')) { renderResults(); return; }
     if (button.hasAttribute('data-restart')) { dialog.showModal(); return; }
