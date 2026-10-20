@@ -1,8 +1,8 @@
 'use strict';
 
 // Bewust fout AI-advies binnen een fictieve simulatie; geen echte AI-aanroep.
-// Elke ronde is één werkblok. Drie blokken per dag, van 2 t/m 8 oktober 2035.
-const CONFIG = { totalRounds: 21, blocksPerDay: 3, startDay: 2, year: 2035, goodWorkChance: 0.20, wrongAdviceChance: 0.10, onLevelMultiplier: 1.6, aboveLevelMultiplier: 2.4 };
+// Elke ronde is één werkblok. Drie blokken per dag, van 2 t/m 8 oktober 2045.
+const CONFIG = { totalRounds: 21, blocksPerDay: 3, startDay: 2, year: 2045, goodWorkChance: 0.20, wrongAdviceChance: 0.10, onLevelMultiplier: 1.6, aboveLevelMultiplier: 2.4 };
 const ASSIGNMENTS = [
   { id: 'A', name: 'Onderzoeksvoorstel', deadline: 9, day: 4,
     tasks: ['Vraagstuk beschrijven', 'Onderzoeksmethode kiezen', 'Onderzoeksplanning maken', 'Theoretisch kader schrijven'],
@@ -280,7 +280,7 @@ if (typeof document !== 'undefined') {
       return `<article class="assignment-item ${open ? 'is-open' : ''} ${w.submitted ? 'is-submitted' : ''}"><button class="assignment-toggle" data-select="${i}" aria-expanded="${open}" aria-controls="tasks-${i}"><div class="assignment-top"><span class="code">OPDRACHT ${a.id}</span><span class="chevron" aria-hidden="true">${open ? '−' : '+'}</span></div><h3>${a.name}</h3><div class="due">${a.day} oktober <span>${count}/${a.tasks.length} taken</span></div><div class="progress-track" aria-hidden="true">${w.done.map(d => `<i class="${d ? 'done' : ''}"></i>`).join('')}</div><div class="status">${w.submitted ? 'Ingeleverd · beoordeling volgt' : count === a.tasks.length ? 'AI-inschatting: op niveau' : 'In uitvoering'}</div></button><div id="tasks-${i}" class="assignment-content" ${open ? '' : 'hidden'}><ul class="task-list">${a.tasks.map((task, t) => `<li><span class="check ${w.done[t] ? '' : 'unchecked'}">${w.done[t] ? '✓' : t + 1}</span><div>${task}${w.fixed.includes(t) ? '<small>Extra inhoudelijk gecontroleerd</small>' : ''}</div></li>`).join('')}</ul><p class="note">${w.submitted ? 'Deze ingeleverde versie staat vast.' : 'Selecteren en bekijken kost geen werkblok.'}</p></div></article>`;
     }).join('');
     const aiBubble = (text, caption = 'StudyGuideAI', extra = '') => `<div class="chat-message ai-message ${extra}"><span class="message-avatar" aria-hidden="true">✦</span><div class="message-body"><span class="message-label">${caption}</span><div class="bubble">${text}</div></div></div>`;
-    let messages = `<div class="chat-divider">2 oktober 2035 · Je studieweek begint</div>${aiBubble('Hey! Je hebt deze week drie opdrachten met deadlines op 4, 6 en 8 oktober. Ik help je stap voor stap. Per keuze gebruik je één werkblok. Laten we beginnen!')}`;
+    let messages = `<div class="chat-divider">2 oktober 2045 · Je studieweek begint</div>${aiBubble('Hey! Je hebt deze week drie opdrachten met deadlines op 4, 6 en 8 oktober. Ik help je stap voor stap. Per keuze gebruik je één werkblok. Laten we beginnen!')}`;
     const eventCard = record => {
       const event = EVENTS.find(e => e.id === record.id);
       return `<article class="event-card ${record.resolved ? 'resolved' : ''}"><span class="event-source">⚡ ${event.source}</span><h3>${event.title}</h3><span class="event-assignment">${ASSIGNMENTS[record.index].name}</span><p>${event.text}</p>${record.resolved ? `<div class="event-resolution"><strong>Jouw reactie: ${record.choice}</strong><p>${record.result}</p>${record.deadlines.map(d => `<p>◷ ${d}</p>`).join('')}</div>` : '<div class="event-pending">Kies hieronder hoe je hiermee omgaat.</div>'}</article>`;
@@ -412,7 +412,7 @@ if (typeof document !== 'undefined') {
     if (button.hasAttribute('data-review')) { state.selected = Number(button.dataset.review); state.reviewing = true; render(); return; }
     if (button.hasAttribute('data-back')) { state.reviewing = false; render(); return; }
     if (button.hasAttribute('data-export')) {
-      const content = { scenario: 'StudyGuideAI — Deadline Diaries', year: 2035, simulated: true, choices: state.history, events: state.events, stats: state.stats, recoveries: state.recoveries, results: ASSIGNMENTS.map((a, i) => ({ assignment: a.name, ...state.work[i].submitted })) };
+      const content = { scenario: 'StudyGuideAI — Deadline Diaries', year: 2045, simulated: true, choices: state.history, events: state.events, stats: state.stats, recoveries: state.recoveries, results: ASSIGNMENTS.map((a, i) => ({ assignment: a.name, ...state.work[i].submitted })) };
       const url = URL.createObjectURL(new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' }));
       const link = document.createElement('a'); link.href = url; link.download = 'studyguideai-keuzelogboek.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); return;
     }

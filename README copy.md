@@ -1,6 +1,6 @@
 # StudyGuideAI — Deadline Diaries
 
-Nederlandstalige future simulation in oktober 2035. Losse HTML, CSS en JavaScript; geen installatie, API-sleutel of internet nodig.
+Nederlandstalige future simulation in oktober 2045. Losse HTML, CSS en JavaScript; geen installatie, API-sleutel of internet nodig.
 
 ## Openen
 
