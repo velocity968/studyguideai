@@ -88,7 +88,7 @@ for (const profile of [fixture(),fixture({checks:0}),fixture({failed:0})]) {
 }
 const openDiscussion=teacher.create(fixture());
 teacher.answer(openDiscussion,'discuss');
-assert(JSON.stringify(openDiscussion.stats)===JSON.stringify({credibility:53,understanding:50,doubt:0,openness:53}),'Open discussion must have small credibility/openness effects only');
+assert(JSON.stringify(openDiscussion.stats)===JSON.stringify({credibility:56,understanding:50,doubt:0,openness:56}),'Open discussion must have small credibility/openness effects only');
 const blameOpening=teacher.create(fixture());
 teacher.answer(blameOpening,'blame');
 assert(blameOpening.stats.credibility<50 && blameOpening.stats.understanding<50 && blameOpening.stats.doubt>0 && blameOpening.stats.openness<50,'Blaming must lower understanding and openness and increase doubt');
@@ -110,3 +110,11 @@ sympathetic.stats={credibility:55,understanding:80,doubt:10,openness:35};
 assert(teacher.thoughts(sympathetic).some(t=>t.id==='sympathy-boundary'),'High understanding and low openness generate sympathy without concession');
 assert(observedThoughts.size>=20,'Many distinct thought patterns across reply paths');
 console.log(JSON.stringify({thoughtPatternsObserved:observedThoughts.size,thoughtIds:[...observedThoughts].sort()}));
+
+const amplified=teacher.create(fixture());
+teacher.answer(amplified,'discuss');
+assert(amplified.lastChanges.credibility===6 && amplified.lastChanges.openness===6,'Three-point positive shifts now have six-point impact');
+const lowerCredibility=teacher.create(fixture());
+teacher.answer(lowerCredibility,'blame');
+assert(lowerCredibility.lastChanges.credibility===-6 && lowerCredibility.lastChanges.understanding===-8 && lowerCredibility.lastChanges.doubt===5 && lowerCredibility.lastChanges.openness===-8,'Amplify three impression values but retain doubt balance');
+console.log('PASS: stronger impression movement; doubt probabilities and internal eight-turn budget retained.');

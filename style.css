@@ -197,3 +197,26 @@ body.finished.teacher-outcome main{height:auto;flex:1}
   .teacher-thought-heading{margin-bottom:15px}
   .teacher-thought-list{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
 }
+
+/* Introductie: bot links, compacte simulatie-uitleg in een kader rechts. */
+body.welcome main{max-width:1180px;padding:28px 32px}
+.welcome-layout{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:65px;align-items:center}
+.welcome-layout .welcome-screen{max-width:none;text-align:left;padding:0}
+.welcome-layout .welcome-mark{margin-left:0}
+.welcome-layout .welcome-caption{margin-left:0}
+.welcome-layout .welcome-screen h1{font-size:clamp(38px,4.8vw,62px)}
+.simulation-intro{position:relative;padding:32px;border:1px solid #55678e;border-radius:22px;background:linear-gradient(145deg,#1e2d49,#121c30);box-shadow:0 24px 60px #0002}
+.simulation-tag{font-size:8px;letter-spacing:1.7px;color:var(--cyan);display:block;margin-bottom:20px}
+.simulation-intro h2{font-size:34px;line-height:1.13;letter-spacing:-1px;margin-bottom:18px}
+.simulation-intro>p{font-size:13px;line-height:1.7;color:var(--muted)}
+.simulation-intro ol{list-style:none;padding:0;margin:22px 0}
+.simulation-intro li{display:flex;gap:13px;margin:16px 0}
+.simulation-step{font-size:10px;color:var(--blue);padding-top:5px;flex-shrink:0}
+.simulation-intro li p{margin:0;font-size:12px;line-height:1.75;color:var(--muted)}
+.simulation-intro strong{font-weight:600;color:var(--text)}
+.simulation-intro .simulation-goodluck{border-top:1px solid var(--line);padding-top:18px;margin:18px 0 0;color:var(--cyan);font-size:12px}
+.simulation-goodluck span{float:right}
+.teacher-patience .teacher-metric-label{margin-bottom:12px}
+@media(max-width:800px){body.welcome main{padding:24px}.welcome-layout{gap:30px}.welcome-layout .welcome-screen h1{font-size:38px}.simulation-intro{padding:24px}.simulation-intro h2{font-size:28px}}
+@media(max-width:620px){.welcome-layout{grid-template-columns:1fr;gap:30px;padding:10px 0}.welcome-layout .welcome-screen{text-align:center}.welcome-layout .welcome-mark{margin-left:auto}.simulation-intro{padding:24px}.simulation-intro h2 br{display:none}}
+@media(max-height:680px) and (min-width:801px){.simulation-intro{padding:23px 26px}.simulation-tag{margin-bottom:14px}.simulation-intro h2{font-size:28px;margin-bottom:12px}.simulation-intro ol{margin:16px 0}.simulation-intro li{margin:11px 0}.simulation-intro .simulation-goodluck{padding-top:13px;margin-top:13px}}

@@ -84,7 +84,10 @@
     return rows[session.step];
   }
   function adjust(s, credibility, understanding, doubt, openness) {
-    for (const [key, delta] of Object.entries({ credibility, understanding, doubt, openness })) s.stats[key] = limit(s.stats[key] + delta);
+    for (const [key, delta] of Object.entries({ credibility, understanding, doubt, openness })) {
+      const multiplier = key === 'doubt' ? 1 : 2;
+      s.stats[key] = limit(s.stats[key] + delta * multiplier);
+    }
   }
   function finish(s, random) {
     const p = s.profile, v = s.stats;

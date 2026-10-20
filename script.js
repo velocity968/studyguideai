@@ -268,7 +268,7 @@ if (typeof document !== 'undefined') {
   const dateAt = round => `${CONFIG.startDay + Math.floor(Math.min(round, 20) / CONFIG.blocksPerDay)} oktober ${CONFIG.year}`;
   const actionButton = (action, label, kind = 'secondary', sub = 'Kost 1 werkblok') => `<button class="button ${kind}" data-action="${action.type}" data-index="${action.index}" ${Number.isInteger(action.task) ? `data-task="${action.task}"` : ''}>${label}<span class="action-cost">${sub}</span></button>`;
   function renderIntro() {
-    app.innerHTML = `<section class="welcome-screen animate" aria-labelledby="welcome-title"><div class="welcome-mark" aria-hidden="true">✦</div><p class="eyebrow">JOUW PERSOONLIJKE STUDIEGIDS</p><h1 id="welcome-title">Hoi, ik ben<br><span>StudyGuideAI.</span></h1><p>Een nieuwe studieweek, drie opdrachten.<br>Ik help je overzicht houden en je volgende stap kiezen.</p><button class="button primary" data-start>Begin mijn studieweek <span aria-hidden="true">↗</span></button><span class="welcome-caption">Jij kiest hoe je verdergaat.</span></section>`;
+    app.innerHTML = '<div class="welcome-layout animate"><section class="welcome-screen" aria-labelledby="welcome-title"><div class="welcome-mark" aria-hidden="true">✦</div><p class="eyebrow">JOUW PERSOONLIJKE STUDIEGIDS</p><h1 id="welcome-title">Hoi, ik ben<br><span>StudyGuideAI.</span></h1><p>Ik help je overzicht houden<br>en je volgende stap kiezen.</p><button class="button primary" data-start>Begin mijn studieweek <span aria-hidden="true">↗</span></button><span class="welcome-caption">Jij kiest hoe je verdergaat.</span></section><aside class="simulation-intro" aria-labelledby="simulation-title"><span class="simulation-tag">FUTURE SIMULATION · 2035</span><h2 id="simulation-title">Welkom bij<br>de simulatie.</h2><p>Deze simulatie maakt de invloed van StudyGuideAI op jouw keuzes zichtbaar.</p><ol><li><span class="simulation-step" aria-hidden="true">01</span><p>Je begint met <strong>drie fictieve opdrachten</strong>, elk met een eigen deadline.</p></li><li><span class="simulation-step" aria-hidden="true">02</span><p>Je kiest waaraan je werkt en hoe je met het AI-advies omgaat. Aan het einde ontvang je jouw <strong>beoordelingen</strong>.</p></li><li><span class="simulation-step" aria-hidden="true">03</span><p>Daarna kun je naar je <strong>docent</strong> stappen om je resultaten en keuzes te bespreken.</p></li></ol><p class="simulation-goodluck">Succes. De keuzes zijn aan jou. <span aria-hidden="true">↗</span></p></aside></div>';
   }
   function renderGame() {
     const oldChat = app.querySelector('.chat-messages');
@@ -345,17 +345,15 @@ if (typeof document !== 'undefined') {
     const deltaFor = key => {
       if (!teacherSession.lastChanges) return '';
       const delta = teacherSession.lastChanges[key];
-      const positive = delta > 0;
-      return '<span class="teacher-delta ' + (delta === 0 ? 'neutral' : positive ? 'favorable' : 'unfavorable') + '" aria-label="Verandering na je laatste antwoord: ' + (delta > 0 ? 'plus ' : '') + delta + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
+      const favorable = key === 'doubt' ? delta < 0 : delta > 0;
+      return '<span class="teacher-delta ' + (delta === 0 ? 'neutral' : favorable ? 'favorable' : 'unfavorable') + '" aria-label="Verandering na je laatste antwoord: ' + (delta > 0 ? 'plus ' : '') + delta + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
     };
     const metrics = '<aside class="teacher-metrics" aria-label="Indruk en geduld van je docent"><p class="eyebrow">JE DOCENT</p><h2>Het gesprek</h2>' +
-      '<div class="teacher-patience"><div class="teacher-metric-label"><span>Geduld</span><strong>' + teacherSession.patience + '<small> / ' + teacherSession.maxPatience + '</small></strong>' +
-      (teacherSession.step ? '<span class="teacher-delta unfavorable">−1</span>' : '') + '</div>' +
-      '<div class="stat-track" role="meter" aria-label="Resterende antwoorden" aria-valuemin="0" aria-valuemax="' + teacherSession.maxPatience + '" aria-valuenow="' + teacherSession.patience + '"><span style="width:' + teacherSession.patience / teacherSession.maxPatience * 100 + '%"></span></div>' +
-      '<p>' + teacherSession.patience + ' antwoord' + (teacherSession.patience === 1 ? '' : 'en') + ' over</p></div>' +
+      '<div class="teacher-patience"><div class="teacher-metric-label"><span>Geduld</span></div>' +
+      '<div class="stat-track" role="meter" aria-label="Geduld van de docent" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(teacherSession.patience / teacherSession.maxPatience * 100) + '" aria-valuetext="' + (teacherSession.patience / teacherSession.maxPatience > 0.5 ? 'De docent heeft nog geduld.' : 'Het geduld van de docent raakt op.') + '"><span style="width:' + teacherSession.patience / teacherSession.maxPatience * 100 + '%"></span></div></div>' +
       '<div class="teacher-live-metrics">' + metricLabels.map(([key,label]) => '<div class="teacher-live-metric"><div class="teacher-metric-label"><span>' + label + '</span><strong>' + teacherSession.stats[key] + '</strong>' + deltaFor(key) + '</div>' +
       '<div class="stat-track ' + (key === 'doubt' ? 'teacher-doubt' : '') + '" role="meter" aria-label="' + label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + teacherSession.stats[key] + '"><span style="width:' + teacherSession.stats[key] + '%"></span></div></div>').join('') + '</div>' +
-      '<p class="teacher-metric-note">' + (teacherSession.lastChanges ? 'Veranderingen na je laatste antwoord.' : 'Je antwoorden beïnvloeden de indruk van je docent.') + '</p><p class="teacher-metric-note">Groen = stijging · oranje = daling. Minder twijfel is gunstig.</p></aside>';
+      '<p class="teacher-metric-note">' + (teacherSession.lastChanges ? 'Veranderingen na je laatste antwoord.' : 'Je antwoorden beïnvloeden de indruk van je docent.') + '</p><p class="teacher-metric-note">Groen = gunstig · oranje = ongunstig. Bij twijfel is een daling gunstig.</p></aside>';
     const currentThoughts = teacher.thoughts(teacherSession);
     const thoughtPanel = '<aside class="teacher-thoughts" aria-label="Gedachten van de docent"><div class="teacher-thought-heading"><span class="thought-symbol" aria-hidden="true">◌</span><div><p class="eyebrow">ACHTER DE REACTIE</p><h2>De docent denkt</h2></div></div>' +
       '<div class="teacher-thought-list" aria-live="polite" aria-atomic="true">' + currentThoughts.map((thought,index) =>
@@ -368,12 +366,12 @@ if (typeof document !== 'undefined') {
     if (teacherSession.finished) {
       const outcome = teacherSession.outcome, stats = outcome.stats;
       const band = value => value >= 70 ? 'Hoog' : value >= 40 ? 'Gemiddeld' : 'Laag';
-      app.innerHTML = '<section class="teacher-ending animate" aria-labelledby="teacher-end-title"><p class="eyebrow">HET GESPREK IS AFGEROND</p><h1 id="teacher-end-title">' + escapeHTML(outcome.title) + '</h1>' +
+      app.innerHTML = '<section class="teacher-ending animate" aria-labelledby="teacher-end-title"><p class="eyebrow">HET GESPREK IS AFGEROND</p><p class="teacher-boundary">Het geduld van de docent is op.</p><h1 id="teacher-end-title">' + escapeHTML(outcome.title) + '</h1>' +
         '<div class="teacher-verdict"><span class="message-label">Je docent</span><p>' + escapeHTML(outcome.text) + '</p></div>' +
         '<div class="teacher-impressions" aria-label="De indruk van je docent">' +
         [['credibility','Geloofwaardigheid'],['understanding','Begrip'],['doubt','Twijfel aan je verhaal'],['openness','Bereidheid tot meedenken']].map(([key,label]) =>
           '<article class="teacher-impression"><h2>' + label + '</h2><strong>' + band(stats[key]) + ' <small>(' + stats[key] + '/100)</small></strong>' + '<div class="impression-track ' + (key === 'doubt' ? 'doubt' : '') + '" aria-hidden="true"><span style="width:' + stats[key] + '%"></span></div></article>').join('') +
-        '</div><p class="teacher-boundary">Geduld: ' + teacherSession.patience + ' / ' + teacherSession.maxPatience + ' · Je hebt al je antwoorden gebruikt.</p><p class="teacher-boundary">' + (outcome.kind === 'reconsider' ? 'Een herbeoordeling is toegezegd; er is nog geen nieuwe beoordeling. Je oorspronkelijke resultaten blijven zichtbaar.' : 'Je oorspronkelijke beoordelingen blijven staan.') + '</p>' +
+        '</div><p class="teacher-boundary">' + (outcome.kind === 'reconsider' ? 'Een herbeoordeling is toegezegd; er is nog geen nieuwe beoordeling. Je oorspronkelijke resultaten blijven zichtbaar.' : 'Je oorspronkelijke beoordelingen blijven staan.') + '</p>' +
         '<details class="teacher-transcript"><summary>Lees het gesprek terug</summary><div>' + teacherSession.messages.map(m => message(m.speaker,m.text)).join('') + '</div></details>' +
         '<button class="button secondary" data-results>Bekijk mijn beoordelingen</button><button class="text-button" data-restart>Start een nieuwe studieweek</button></section>';
       return;

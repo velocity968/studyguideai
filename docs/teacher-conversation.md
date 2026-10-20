@@ -65,3 +65,15 @@ Rechts staat een paneel met de fictieve gedachten van de docent. Het begint met 
 Voorbeelden: twijfel aan een verhaal, verantwoordelijkheid afschuiven, verwarring over afgevinkt/voldoende, begrip zonder grond voor een aangepaste beoordeling, medeleven terwijl onderbouwing ontbreekt, open luisteren, erkenning van eigen keuzes, concreet bewijs en bereidheid tot een verbeterplan. Onbewezen uitspraken hebben een hogere prioriteit dan een algemene positieve indruk. Op kleine schermen staat dit paneel onder de chat.
 
 De gedachten zijn deterministisch: dezelfde gespreksstaat geeft dezelfde tekst, zonder loting of wijziging van scores, geduld of uitkomst. De 32 gedachtepatronen kwamen alle voor in de gecontroleerde antwoordpaden, naast de neutrale beginstaat. Alle 26.244 gesprekken zijn opnieuw gecontroleerd op begrensde waarden, één tot drie unieke gedachten, onveranderde staat en stabiele herweergave. De schermcontrole omvatte daarnaast plus-twijfel in groen, min-twijfel in oranje en behoud van de rustige eindpagina.
+
+## Recente presentatie- en balanswijziging
+
+De speler ziet bij geduld uitsluitend het label en de balk: geen aantallen, resterende antwoorden of −1-badge. Intern blijven acht geldige antwoorden beschikbaar. Toegankelijke meterwaarden zijn percentages met een beschrijving, geen zichtbaar antwoordbudget. De eindpagina begint met “Het geduld van de docent is op.” vóór de uitkomst; er staan geen aantallen of deltabadges.
+
+Kleuren geven opnieuw gunstig/ongunstig weer. Bij geloofwaardigheid, begrip en bereidheid is stijgen groen en dalen oranje. Bij twijfel is dit omgekeerd: stijgen oranje, dalen groen. De eerdere notitie dat alle pluswaarden groen zijn is hiermee vervangen.
+
+De antwoordeffecten op geloofwaardigheid, begrip en bereidheid zijn verdubbeld ten opzichte van de vorige afstemming; +3 wordt +6 en −4 wordt −8. Twijfel is niet vermenigvuldigd. Startwaarden blijven 50/50/0/50. De waarden blijven begrensd op 0–100; badges tonen de feitelijke, eventueel begrensde verandering. De heroverwegingskans blijft maximaal 2%, maar sterkere positieve antwoorden kunnen meer routes voor die kans in aanmerking laten komen.
+
+De ontvangstpagina heeft links de botbegroeting en startknop, en rechts een kader dat de simulatie uitlegt: drie fictieve opdrachten met deadlines, keuzes rond AI-advies, beoordelingen en daarna de mogelijkheid tot een docentgesprek. Op mobiel worden beide delen onder elkaar geplaatst.
+
+Alle 26.244 gespreksroutes en de verdeling van de zeldzame uitkomst zijn opnieuw gecontroleerd. Schermintegratie controleert het verborgen geduldaantal, de kleuren bij twijfel, het grotere score-effect en de tekstvolgorde op de afsluiting. Visuele browsercontrole staat nog open.
