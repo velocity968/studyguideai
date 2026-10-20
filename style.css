@@ -173,3 +173,27 @@ body.finished.teacher-outcome main{height:auto;flex:1}
   .teacher-workspace>.teacher-shell{grid-column:1;grid-row:2}
 }
 @media(max-width:420px){.teacher-metrics{grid-template-columns:95px minmax(0,1fr);gap:10px}.teacher-live-metrics{gap:9px}.teacher-delta{font-size:9px;padding:2px 3px}.teacher-metric-label>span:first-child{font-size:8px}}
+
+/* Gedachten rechts: rangorde volgt de docentwaarden en gesprekscontext. */
+.teacher-thoughts{grid-column:3;grid-row:1;overflow-y:auto;min-height:0;padding:22px 18px;background:#111a2c;border:1px solid var(--line);border-radius:16px;scrollbar-width:thin;scrollbar-color:#354367 transparent}
+.teacher-thought-heading{display:flex;gap:10px;align-items:center;margin-bottom:24px}
+.thought-symbol{display:grid;place-items:center;width:30px;height:30px;border:1px solid #655783;border-radius:10px;color:#c6baff;font-size:24px;flex-shrink:0}
+.teacher-thought-heading .eyebrow{font-size:7px;letter-spacing:1.2px;color:#bcb0e4;margin:0 0 6px}
+.teacher-thought-heading h2{font-size:17px;letter-spacing:-.3px;margin:0}
+.teacher-thought-list{display:grid;gap:13px}
+.teacher-thought-card{padding:16px 14px;border:1px solid var(--line);border-radius:12px;background:#172139}
+.teacher-thought-card.dominant{border-color:#6b5c91;background:linear-gradient(140deg,#292541,#18233b)}
+.thought-caption{display:block;font-size:7px;letter-spacing:1px;color:#b6aad9;margin-bottom:11px;line-height:1.5}
+.teacher-thought-card h3{font-size:13px;line-height:1.55;margin:0 0 9px;font-weight:600}
+.teacher-thought-card p{font-size:11px;line-height:1.75;color:var(--muted);margin:0}
+.teacher-thought-note{font-size:9px;line-height:1.6;color:var(--muted);margin:18px 0 0}
+@media(min-width:801px) and (max-width:1100px){.teacher-thoughts{padding:18px 13px}.teacher-thought-heading{gap:7px}.teacher-thought-heading h2{font-size:14px}.teacher-thought-card{padding:13px 11px}.teacher-thought-card h3{font-size:12px}.teacher-thought-card p{font-size:10px}}
+@media(max-width:800px){
+  body.finished.teacher-chat{height:auto;min-height:100dvh;overflow:auto}
+  body.finished.teacher-chat main{height:auto;min-height:calc(100dvh - 68px)}
+  .teacher-workspace{height:auto;grid-template-rows:auto auto auto}
+  .teacher-workspace>.teacher-shell{height:82dvh;min-height:440px}
+  .teacher-thoughts{grid-column:1;grid-row:3;overflow:visible;padding:16px}
+  .teacher-thought-heading{margin-bottom:15px}
+  .teacher-thought-list{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+}

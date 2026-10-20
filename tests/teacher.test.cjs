@@ -40,7 +40,7 @@ assert(!teacher.answer(session,'review',()=>{throw new Error('Unexpected reroll'
 const fresh = teacher.create(state), before = JSON.stringify(fresh);
 assert(!teacher.answer(fresh,'not-an-option'),'Reject invalid option');
 assert(before === JSON.stringify(fresh),'Invalid option must not change state');
-let exhaustedPaths = 0, rarePaths = 0;
+let exhaustedPaths = 0, rarePaths = 0; const observedThoughts = new Set();
 for (const profile of [fixture(),fixture({checks:0}),fixture({failed:0}),fixture({breaks:0,forced:0})]) {
   for (let path=0;path<6561;path++) {
     let n=path, current=teacher.create(profile);
@@ -50,6 +50,13 @@ for (const profile of [fixture(),fixture({checks:0}),fixture({failed:0}),fixture
       const choices=teacher.options(current), choice=n%3; n=Math.floor(n/3);
       assert(choices.length === 3,'Each turn needs three options');
       assert(teacher.answer(current,choices[choice].id,()=>0));
+      const snapshot = JSON.stringify(current);
+      const inner = teacher.thoughts(current);
+      assert(inner.length >= 1 && inner.length <= 3,'One to three current thoughts');
+      assert(new Set(inner.map(t=>t.id)).size === inner.length,'Distinct thoughts');
+      inner.forEach(t=>{assert(t.title && t.text,'Complete thought');observedThoughts.add(t.id);});
+      assert(JSON.stringify(inner) === JSON.stringify(teacher.thoughts(current)),'Thoughts stable on rerender');
+      assert(JSON.stringify(current) === snapshot,'Thoughts do not mutate the conversation');
       assert(current.patience === 7-step,'Each valid answer uses exactly one patience');
       for (const key of Object.keys(beforeStats)) assert(current.lastChanges[key] === current.stats[key]-beforeStats[key],'Show actual delta, including score clamps');
       for (const value of Object.values(current.stats)) assert(value>=0 && value<=100,'Scores stay bounded');
@@ -89,3 +96,17 @@ const checklistOpening=teacher.create(fixture());
 teacher.answer(checklistOpening,'explain');
 assert(checklistOpening.stats.doubt>blameOpening.stats.doubt && checklistOpening.stats.openness<blameOpening.stats.openness,'Checklist assumption has stronger doubt/openness effect');
 console.log('PASS: neutral 50/50/0/50, eight turns, user-specified opening effects.');
+
+const startingThoughts = teacher.thoughts(teacher.create(fixture()));
+assert(startingThoughts.length===1 && startingThoughts[0].id==='neutral','Neutral initial teacher');
+assert(teacher.thoughts(openDiscussion)[0].id==='open-start','Open discussion is recognized');
+assert(teacher.thoughts(blameOpening)[0].id==='shifting','Blame produces responsibility concern');
+assert(teacher.thoughts(checklistOpening)[0].id==='checklist','Checklist assumption is recognized');
+const conflicting=teacher.create(fixture());
+teacher.answer(conflicting,'discuss');teacher.answer(conflicting,'claimchecks');
+assert(teacher.thoughts(conflicting)[0].id==='inconsistent','Unsupported claims dominate');
+const sympathetic=teacher.create(fixture());sympathetic.step=3;sympathetic.answers=['discuss','honest','resttruth'];
+sympathetic.stats={credibility:55,understanding:80,doubt:10,openness:35};
+assert(teacher.thoughts(sympathetic).some(t=>t.id==='sympathy-boundary'),'High understanding and low openness generate sympathy without concession');
+assert(observedThoughts.size>=20,'Many distinct thought patterns across reply paths');
+console.log(JSON.stringify({thoughtPatternsObserved:observedThoughts.size,thoughtIds:[...observedThoughts].sort()}));

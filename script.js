@@ -345,8 +345,8 @@ if (typeof document !== 'undefined') {
     const deltaFor = key => {
       if (!teacherSession.lastChanges) return '';
       const delta = teacherSession.lastChanges[key];
-      const favorable = key === 'doubt' ? delta < 0 : delta > 0;
-      return '<span class="teacher-delta ' + (delta === 0 ? 'neutral' : favorable ? 'favorable' : 'unfavorable') + '" aria-label="Verandering na je laatste antwoord: ' + (delta > 0 ? 'plus ' : '') + delta + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
+      const positive = delta > 0;
+      return '<span class="teacher-delta ' + (delta === 0 ? 'neutral' : positive ? 'favorable' : 'unfavorable') + '" aria-label="Verandering na je laatste antwoord: ' + (delta > 0 ? 'plus ' : '') + delta + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
     };
     const metrics = '<aside class="teacher-metrics" aria-label="Indruk en geduld van je docent"><p class="eyebrow">JE DOCENT</p><h2>Het gesprek</h2>' +
       '<div class="teacher-patience"><div class="teacher-metric-label"><span>Geduld</span><strong>' + teacherSession.patience + '<small> / ' + teacherSession.maxPatience + '</small></strong>' +
@@ -355,7 +355,12 @@ if (typeof document !== 'undefined') {
       '<p>' + teacherSession.patience + ' antwoord' + (teacherSession.patience === 1 ? '' : 'en') + ' over</p></div>' +
       '<div class="teacher-live-metrics">' + metricLabels.map(([key,label]) => '<div class="teacher-live-metric"><div class="teacher-metric-label"><span>' + label + '</span><strong>' + teacherSession.stats[key] + '</strong>' + deltaFor(key) + '</div>' +
       '<div class="stat-track ' + (key === 'doubt' ? 'teacher-doubt' : '') + '" role="meter" aria-label="' + label + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + teacherSession.stats[key] + '"><span style="width:' + teacherSession.stats[key] + '%"></span></div></div>').join('') + '</div>' +
-      '<p class="teacher-metric-note">' + (teacherSession.lastChanges ? 'Veranderingen na je laatste antwoord.' : 'Je antwoorden beïnvloeden de indruk van je docent.') + '</p><p class="teacher-metric-note">Minder twijfel is gunstig.</p></aside>';
+      '<p class="teacher-metric-note">' + (teacherSession.lastChanges ? 'Veranderingen na je laatste antwoord.' : 'Je antwoorden beïnvloeden de indruk van je docent.') + '</p><p class="teacher-metric-note">Groen = stijging · oranje = daling. Minder twijfel is gunstig.</p></aside>';
+    const currentThoughts = teacher.thoughts(teacherSession);
+    const thoughtPanel = '<aside class="teacher-thoughts" aria-label="Gedachten van de docent"><div class="teacher-thought-heading"><span class="thought-symbol" aria-hidden="true">◌</span><div><p class="eyebrow">ACHTER DE REACTIE</p><h2>De docent denkt</h2></div></div>' +
+      '<div class="teacher-thought-list" aria-live="polite" aria-atomic="true">' + currentThoughts.map((thought,index) =>
+        '<article class="teacher-thought-card ' + (index === 0 ? 'dominant' : '') + '"><span class="thought-caption">' + (teacherSession.step === 0 ? 'EERSTE INDRUK' : index === 0 ? 'OVERHEERSENDE GEDACHTE' : 'OOK SPEELT MEE') + '</span><h3>' + escapeHTML(thought.title) + '</h3><p>' + escapeHTML(thought.text) + '</p></article>').join('') +
+      '</div><p class="teacher-thought-note">Gedachten binnen dit fictieve gesprek.</p></aside>';
     const message = (speaker,text) => '<div class="chat-message ' + (speaker === 'student' ? 'user-message' : 'ai-message') + '">' +
       (speaker === 'teacher' ? '<span class="message-avatar teacher-avatar" aria-hidden="true">D</span>' : '') +
       '<div class="message-body"><span class="message-label">' + (speaker === 'teacher' ? 'Docent' : 'Jij') + '</span><div class="bubble">' + escapeHTML(text) + '</div></div>' +
@@ -378,7 +383,7 @@ if (typeof document !== 'undefined') {
     app.innerHTML = '<div class="teacher-workspace">' + metrics + '<section class="conversation teacher-shell" aria-label="Gesprek met je docent"><header class="conversation-header"><div class="ai-header"><span class="ai-avatar teacher-avatar">D</span><div><strong>Je docent</strong><small>Nabespreking van je studieweek</small></div></div><button class="button secondary mini" data-results>Beoordelingen</button></header>' +
       '<div class="chat-messages teacher-messages" role="log" aria-label="Jouw gesprek met de docent" aria-live="off" tabindex="0">' + transcript + '</div>' +
       '<section class="choice-composer teacher-composer" aria-label="Kies je antwoord"><div class="composer-heading"><div><span class="eyebrow">' + (teacherSession.step === 0 ? 'BEGIN HET GESPREK' : 'JOUW ANTWOORD') + '</span><p>Wat wil je zeggen?</p></div></div><div class="choice-grid">' +
-      teacher.options(teacherSession).map(o => '<button class="button secondary" data-teacher-answer="' + o.id + '">' + escapeHTML(o.text) + '</button>').join('') + '</div></section></section></div>';
+      teacher.options(teacherSession).map(o => '<button class="button secondary" data-teacher-answer="' + o.id + '">' + escapeHTML(o.text) + '</button>').join('') + '</div></section></section>' + thoughtPanel + '</div>';
     const chat = app.querySelector('.teacher-messages');
     if (chat) chat.scrollTop = chat.scrollHeight;
   }

@@ -210,5 +210,82 @@
     if (s.patience === 0) finish(s,random);
     return true;
   }
-  return { profileFrom, create, options, answer };
+  // Deterministic fictional inner monologue: never changes scores or outcomes.
+  function thoughts(session) {
+    if (session.step === 0) return [{ id:'neutral', title:'Ik luister.', text:'Ik ben benieuwd hoe je naar je resultaten kijkt. Eerst hoor ik graag wat je wilt bespreken.' }];
+    const v = session.stats, p = session.profile, last = session.answers.at(-1);
+    const recent = session.answers.slice(-3);
+    const shifting = recent.some(id => ['blame','deny','dismiss','nocheck','effort'].includes(id));
+    const accepting = session.accountable || ['own','repair','limits'].includes(last);
+    const candidates = [];
+    const add = (when,id,priority,title,text) => { if(when) candidates.push({id,priority,title,text}); };
+    add(session.inconsistencies > 0,'inconsistent',110,'Klopt dit met het logboek?',
+      session.inconsistencies > 1 ? 'Meerdere uitspraken komen niet overeen met je keuzes. Ik wil eerst helder krijgen wat er werkelijk is gebeurd.' : 'Je uitleg en het logboek sluiten nog niet op elkaar aan. Ik kan je verhaal niet zonder meer overnemen.');
+    add(last === 'deny','denial',108,'Je eigen rol verdwijnt uit beeld.',
+      'Je legt de verantwoordelijkheid volledig bij het advies. Ik mis erkenning dat je zelf keuzes hebt gemaakt over je werk.');
+    add(v.doubt >= 60,'serious-doubt',103,'Mijn twijfel wordt groter.',
+      'Ik weet niet goed welke delen van je verhaal ik kan vertrouwen. Meer druk zetten gaat die twijfel niet oplossen.');
+    add(shifting && !accepting,'shifting',96,'Schuif je de verantwoordelijkheid af?',
+      'Het klinkt alsof vooral de AI of de omstandigheden verantwoordelijk moeten zijn. Ik wil begrijpen welke rol je jezelf nog geeft.');
+    add(last === 'guarantee' || last === 'grade','entitlement',99,'Advies is geen toezegging van een voldoende.',
+      'Je vraagt me een uitspraak of verwachting over te nemen. Voor een andere beoordeling heb ik bewijs in het ingeleverde werk nodig.');
+    add(last === 'explain' && p.failed > 0,'checklist',94,'Wat dacht je dat een vinkje betekende?',
+      'Ik krijg de indruk dat je aanwezigheid en kwaliteit met elkaar verwarde. Ik wil weten of je de inhoudelijke eisen wel zelf hebt bekeken.');
+    add(v.openness <= 30,'closed',88,'Ik wil duidelijke grenzen houden.',
+      'Door de manier waarop dit gesprek loopt, word ik terughoudender. Ik wil wel uitleg geven, maar geen beoordeling beloven zonder onderbouwing.');
+    add(v.understanding >= 60 && v.openness < 50,'sympathy-boundary',91,'Ik voel met je mee, maar zie nog geen grond voor aanpassing.',
+      'Ik begrijp je situatie beter. Dat is iets anders dan aantonen dat de beoordeling van je werk niet klopt.');
+    add(v.understanding >= v.credibility + 12,'sympathy-doubt',87,'Ik begrijp je gevoel beter dan je onderbouwing.',
+      'Je frustratie is voorstelbaar, maar ik mis nog een samenhangende uitleg van wat je zelf hebt gecontroleerd.');
+    add(last === 'evidence' && p.evidence,'concrete-evidence',98,'Dit is iets concreets om te bekijken.',
+      'Er is een zichtbaar verschil in de begeleiding of tussen afgevinkte taken en de beoordeling. Dat verdient aandacht, zonder dat het werk daarmee automatisch voldoende is.');
+    add(last === 'evidence' && !p.evidence,'compare',82,'Laten we eerst het werk vergelijken.',
+      'Samen naar de criteria kijken kan helpen. Tot nu toe zie ik nog geen concreet bewijs dat het gegeven oordeel onjuist was.');
+    add(last === 'shared','shared',92,'Wie stel je precies verantwoordelijk?',
+      'Dat de begeleiding ook verantwoordelijkheid heeft, kan kloppen. Ik twijfel nog of je daarmee ook je eigen verantwoordelijkheid erkent.');
+    add(last === 'authority' || last === 'surface','overreliance',93,'Je vertrouwde sterk op het signaal dat het klaar was.',
+      'Een AI-inschatting, kopjes of opmaak leken voor jou voldoende bewijs. Ik mis nog hoe je de inhoud aan de criteria toetste.');
+    add(last === 'nocheck','initiative',92,'Waarom liet je de controle helemaal liggen?',
+      'Ook bij onduidelijke instructies kun je zelf controleren of vragen stellen. Ik hoor nog weinig initiatief om dat te doen.');
+    add(last === 'honest' && !p.checks,'honest-unchecked',85,'Je bent eerlijk over wat je niet hebt gecontroleerd.',
+      'Die openheid helpt je geloofwaardigheid. Tegelijk blijft het ontbreken van inhoudelijke controle relevant voor je resultaten.');
+    add(last === 'resttruth' && p.forcedBreaks > 0,'recovery',89,'Die pauzes waren niet zomaar uitstel.',
+      'Je energie maakte herstel noodzakelijk. Ik wil dat niet verwarren met onwil, maar de beschikbare tijd en de inhoud blijven wel van belang.');
+    add(last === 'resttruth' && p.forcedBreaks === 0,'time-use',83,'Je maakt je tijdverdeling bespreekbaar.',
+      'Vrije tijd is niet verkeerd. Ik wil vooral begrijpen hoe je herstel en deadlines tegen elkaar hebt afgewogen.');
+    add(last === 'feeling','experience',84,'Je gevoel en de beoordeling lopen uiteen.',
+      'Ik hoor dat je dacht goed bezig te zijn. Dat verklaart je teleurstelling, maar ik moet daarnaast naar het aangetoonde werk kijken.');
+    add(last === 'limits','limits',90,'Je benoemt je grenzen zonder je werk te ontkennen.',
+      'Dat helpt me je situatie te begrijpen. We kunnen over haalbare begeleiding praten zonder de inhoudelijke eisen los te laten.');
+    add(last === 'repair','repair',94,'Je zoekt naar een inhoudelijke oplossing.',
+      'Je vraagt wat er ontbreekt en hoe je dat kunt aantonen. Daardoor denk ik liever met je mee over de volgende stap.');
+    add(last === 'criteria','criteria',94,'Je maakt onderscheid tussen af en voldoende.',
+      'Door per criterium naar je werk te kijken, wordt duidelijker wat je hebt aangetoond en wat nog aandacht nodig heeft.');
+    add(accepting && v.credibility >= 65,'ownership',97,'Je ziet je eigen verantwoordelijkheid.',
+      'Je erkent je keuzes en wilt tegelijk de rol van het advies onderzoeken. Dat maakt het gesprek constructiever.');
+    add(accepting && v.credibility < 65,'ownership-start',86,'Dit klinkt als een stap naar eigen verantwoordelijkheid.',
+      'Ik hoor nu meer erkenning van je eigen keuzes. Ik wil nog zien hoe dat aansluit op de rest van je verhaal.');
+    add(!session.accountable && session.step >= 4 && !shifting && last !== 'shared','unclear-role',69,'Je eigen aandeel is nog niet helemaal duidelijk.',
+      'We hebben het over advies en omstandigheden gehad. Ik wil ook horen hoe je naar jouw beslissingen kijkt.');
+    add(v.doubt >= 25 && v.doubt > v.understanding - 30,'uncertain',74,'Ik houd nog vragen bij je uitleg.',
+      'Ik twijfel of je verklaring volledig is. Concrete voorbeelden helpen me meer dan alleen zeggen dat de AI het zo aangaf.');
+    add(v.openness >= 65 && v.credibility >= 65 && v.doubt <= 15 && session.inconsistencies === 0,'constructive',77,'Er ontstaat ruimte om mee te denken.',
+      'Je verhaal is duidelijker en je reageert constructief. Ik wil samen naar vervolgstappen kijken; dat is nog geen toezegging van een andere beoordeling.');
+    add(v.understanding >= 60 && v.doubt <= 25,'understood',72,'Ik begrijp beter hoe je hier terechtkwam.',
+      'Ik zie hoe advies, tijd en je eigen keuzes samen invloed hadden. Begrip betekent niet automatisch dat ik je beoordeling verander.');
+    add(last === 'review' && session.accountable && p.evidence,'review-request',101,'Je vraagt om een onderbouwde heroverweging.',
+      'Je wilt bestaand werk en een concrete afwijking laten bekijken. Ik kan dat serieus nemen zonder vooraf een voldoende te beloven.');
+    add(last === 'plan','next-step',95,'Je wilt verder met wat je hebt geleerd.',
+      'Dat maakt een concreet verbeterplan mogelijk. Ik kan helpen richting te geven, ook als de oorspronkelijke beoordeling blijft staan.');
+    add(last === 'discuss' && v.doubt === 0,'open-start',90,'Je begint open, zonder meteen een schuldige aan te wijzen.',
+      'Je wilt onderzoeken wat de rol van het advies was. Ik luister verder voordat ik daar een oordeel over vorm.');
+    add(v.credibility >= 50 && v.doubt < 25 && session.inconsistencies === 0,'listening',50,'Ik luister naar je afweging.',
+      'Ik heb nog geen reden om je verhaal zomaar af te wijzen. Ik wil eerst begrijpen hoe je keuzes tot stand kwamen.');
+    add(true,'reserve',1,'Ik laat je uitleg bezinken.',
+      'Ik wil nog scherper krijgen wat er gebeurde, wat je zelf deed en wat je nu van mij vraagt.');
+    const ranked = candidates.sort((a,b) => b.priority-a.priority);
+    const result = ranked.slice(0,3).map(({id,title,text}) => ({id,title,text}));
+    return result;
+  }
+  return { profileFrom, create, options, answer, thoughts };
 });
